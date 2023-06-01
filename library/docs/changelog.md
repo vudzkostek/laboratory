@@ -9,6 +9,30 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 - Upgrade Wire to `4.7.0`.
 - Upgrade Kotlin to `1.8.21`.
+- Upgrade Gradle to `8.1.1`.
+- Upgrade Kotest to `5.6.2`.
+- Upgrade Hyperion to `0.9.37`.
+- Upgrade Detekt to `1.22.0`.
+- Upgrade Coroutines to `1.6.4`.
+- Upgrade AppCompat to `1.6.1`.
+- Upgrade ViewModel-ktx to `2.6.1`.
+- Upgrade Fragment-ktx to `1.5.7`.
+- Upgrade RecyclerView to `1.3.0`.
+- Upgrade Material to `1.9.0`.
+- Upgrade Firebase to `20.2.2`.
+- Upgrade Google Services to `4.3.15`.
+- Upgrade Dokka to `1.8.10`.
+- Upgrade Auto-Service to `1.1.0`.
+- Upgrade GradleVersions to `0.46.0`.
+- Upgrade KotlinPoet to `1.13.2`.
+- Upgrade androidx.test:core-ktx to `1.5.0`.
+- Upgrade Orchestrator to `1.4.2`.
+- Upgrade androidx.test:runner to `1.5.2`.
+- Upgrade junit-ktx to `1.1.5`.
+- Upgrade compile Java version to 17.
+- Change compile and target sdk to 33.
+- Migrate selected scripts to kts.
+- Migrate dependencies declaration to version catalog (toml file).
 
 ## [1.0.3] - 2022-10-01
 
