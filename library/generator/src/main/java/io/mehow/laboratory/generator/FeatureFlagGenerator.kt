@@ -84,7 +84,7 @@ internal class FeatureFlagGenerator(
           addProperty(sourceWithOverride)
         }
       }
-      .apply { kdoc?.let { addKdoc(it) } }
+      .apply { addKdoc(kdoc.build()) }
       .apply { descriptionProperty?.let { addProperty(it) } }
       .apply { supervisorOptionProperty?.let { addProperty(it) } }
       .build()

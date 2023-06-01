@@ -24,7 +24,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Upgrade Dokka to `1.8.10`.
 - Upgrade Auto-Service to `1.1.0`.
 - Upgrade GradleVersions to `0.46.0`.
-- Upgrade KotlinPoet to `1.13.2`.
+- Upgrade KotlinPoet to `1.14.2`.
 - Upgrade androidx.test:core-ktx to `1.5.0`.
 - Upgrade Orchestrator to `1.4.2`.
 - Upgrade androidx.test:runner to `1.5.2`.
