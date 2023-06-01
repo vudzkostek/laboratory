@@ -67,7 +67,7 @@ internal class SharedPreferencesFeaturesStorageTest {
   }
 }
 
-private enum class FeatureA : Feature<FeatureA> {
+internal enum class FeatureA : Feature<FeatureA> {
   A,
   B,
   ;
