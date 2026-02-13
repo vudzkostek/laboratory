@@ -17,10 +17,13 @@ class Application : AndroidApplication() {
 
   override fun onCreate() {
     super.onCreate()
-    val dataStore =
-      DataStoreFactory.create(StorageDataSerializer) { File(filesDir, "datastore/local") }
-    val storage = Storage.dataStore(dataStore)
-    laboratory = Laboratory.create(storage)
+      val dataStore =
+          DataStoreFactory.create(StorageDataSerializer) { File(filesDir, "datastore/local") }
+      val dataStore2 =
+          DataStoreFactory.create(StorageDataSerializer) { File(filesDir, "datastore/local2") }
+      val storage = Storage.dataStore(dataStore)
+      val storage2 = Storage.dataStore(dataStore2)
+    laboratory = Laboratory.builder().localStorage(storage).remoteStorage(storage2).build()
     LaboratoryActivity.configure(
       laboratory,
       mainFactory = FeatureFactory.generated(),

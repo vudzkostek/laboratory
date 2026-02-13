@@ -15,6 +15,8 @@ laboratory {
     withOption("Error")
   }
 
-  enabledFeature("ShowAds")
+  enabledFeature("ShowAds"){
+      isRemote = true
+  }
   enabledFeature("ReportRootedDevice")
 }
