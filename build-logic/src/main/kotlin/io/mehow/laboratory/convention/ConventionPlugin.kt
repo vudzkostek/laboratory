@@ -24,7 +24,7 @@ import org.gradle.kotlin.dsl.getByType
 import org.gradle.kotlin.dsl.withType
 import org.gradle.plugin.use.PluginDependency
 import org.jetbrains.kotlin.gradle.dsl.KotlinBaseExtension
-import org.jetbrains.kotlin.gradle.dsl.KotlinJvmCompilerOptions
+import org.jetbrains.kotlin.gradle.dsl.KotlinCommonCompilerOptions
 import org.jetbrains.kotlin.gradle.plugin.KotlinBasePlugin
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompilationTask
 import tapmoc.configureJavaCompatibility
@@ -62,7 +62,7 @@ class ConventionPlugin : Plugin<Project> {
         }
       }
     }
-    tasks.withType<KotlinCompilationTask<KotlinJvmCompilerOptions>>().configureEach {
+    tasks.withType<KotlinCompilationTask<KotlinCommonCompilerOptions>>().configureEach {
       compilerOptions {
         progressiveMode.set(true)
         allWarningsAsErrors.set(true)
