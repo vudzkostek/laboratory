@@ -8,7 +8,9 @@ import org.gradle.api.provider.ListProperty
 import org.gradle.api.tasks.Input
 import org.gradle.api.tasks.OutputDirectory
 import org.gradle.api.tasks.TaskAction
+import org.gradle.work.DisableCachingByDefault
 
+@DisableCachingByDefault(because = "Code generation is fast; caching provides no benefit.")
 internal abstract class FeatureFlagsTask @Inject constructor(objects: ObjectFactory) :
   OutputTask() {
   @Input
