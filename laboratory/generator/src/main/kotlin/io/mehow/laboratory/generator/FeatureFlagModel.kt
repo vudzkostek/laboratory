@@ -70,6 +70,11 @@ private class FeatureFlagGenerator(private val feature: FeatureFlagModel) {
         .build()
     }
 
+  private val storageKeyProperty =
+    PropertySpec.builder(storageKeyPropertyName, String::class, OVERRIDE)
+      .getter(FunSpec.getterBuilder().addCode("return %S", feature.className.canonicalName).build())
+      .build()
+
   private val defaultSourceProperty =
     if (feature.isRemote) {
       PropertySpec.builder(defaultSourcePropertyName, sourceType, OVERRIDE)
@@ -127,6 +132,7 @@ private class FeatureFlagGenerator(private val feature: FeatureFlagModel) {
       .apply { binaryFeatureConstructor?.let(::primaryConstructor) }
       .apply { binaryValueProperty?.let(::addProperty) }
       .addProperty(defaultOptionProperty)
+      .addProperty(storageKeyProperty)
       .apply {
         feature.options.fold(this) { builder, featureOption ->
           val typeSpec =
@@ -160,6 +166,7 @@ private class FeatureFlagGenerator(private val feature: FeatureFlagModel) {
     const val defaultSourcePropertyName = "defaultSource"
     const val descriptionPropertyName = "description"
     const val binaryValuePropertyName = "binaryValue"
+    const val storageKeyPropertyName = "storageKey"
 
     val sourceType = Feature.Source::class
   }

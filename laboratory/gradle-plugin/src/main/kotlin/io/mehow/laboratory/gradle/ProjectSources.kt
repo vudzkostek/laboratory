@@ -3,6 +3,7 @@ package io.mehow.laboratory.gradle
 import com.android.build.api.variant.Variant
 import org.gradle.api.Project
 import org.gradle.api.tasks.TaskProvider
+import org.jetbrains.kotlin.gradle.dsl.KotlinMultiplatformExtension
 import org.jetbrains.kotlin.gradle.plugin.KotlinSourceSetContainer
 
 internal sealed interface ProjectSources {
@@ -20,6 +21,13 @@ internal sealed interface ProjectSources {
     override fun <T : OutputTask> srcDir(task: TaskProvider<out T>) {
       val sourceSets = variant.sources.kotlin!!
       sourceSets.addGeneratedSourceDirectory(task, OutputTask::outputDirectory)
+    }
+  }
+
+  class KotlinMultiplatform(val project: Project) : ProjectSources {
+    override fun <T : OutputTask> srcDir(task: TaskProvider<out T>) {
+      val extension = project.extensions.getByType(KotlinMultiplatformExtension::class.java)
+      extension.sourceSets.getByName("commonMain").kotlin.srcDir(task)
     }
   }
 }

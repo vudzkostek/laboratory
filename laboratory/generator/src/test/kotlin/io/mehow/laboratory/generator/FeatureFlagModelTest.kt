@@ -28,6 +28,7 @@ class FeatureFlagModelTest {
         package io.mehow
 
         import io.mehow.laboratory.Feature
+        import kotlin.String
 
         public enum class FeatureA : Feature<FeatureA> {
           A,
@@ -35,6 +36,9 @@ class FeatureFlagModelTest {
 
           override val defaultOption: FeatureA
             get() = A
+
+          override val storageKey: String
+            get() = "io.mehow.FeatureA"
         }
         """
   }
@@ -55,6 +59,7 @@ class FeatureFlagModelTest {
         package io.mehow
 
         import io.mehow.laboratory.Feature
+        import kotlin.String
 
         internal enum class FeatureA : Feature<FeatureA> {
           A,
@@ -62,6 +67,9 @@ class FeatureFlagModelTest {
 
           override val defaultOption: FeatureA
             get() = A
+
+          override val storageKey: String
+            get() = "io.mehow.FeatureA"
         }
         """
   }
@@ -81,6 +89,7 @@ class FeatureFlagModelTest {
         package io.mehow
 
         import io.mehow.laboratory.Feature
+        import kotlin.String
 
         public enum class FeatureA : Feature<FeatureA> {
           A,
@@ -88,6 +97,9 @@ class FeatureFlagModelTest {
 
           override val defaultOption: FeatureA
             get() = A
+
+          override val storageKey: String
+            get() = "io.mehow.FeatureA"
         }
         """
   }
@@ -107,6 +119,7 @@ class FeatureFlagModelTest {
         package io.mehow
 
         import io.mehow.laboratory.Feature
+        import kotlin.String
 
         public enum class FeatureA : Feature<FeatureA> {
           A,
@@ -115,6 +128,9 @@ class FeatureFlagModelTest {
 
           override val defaultOption: FeatureA
             get() = B
+
+          override val storageKey: String
+            get() = "io.mehow.FeatureA"
         }
         """
   }
@@ -171,6 +187,7 @@ class FeatureFlagModelTest {
         package io.mehow
 
         import io.mehow.laboratory.Feature
+        import kotlin.String
 
         public enum class FeatureA : Feature<FeatureA> {
           A,
@@ -178,6 +195,9 @@ class FeatureFlagModelTest {
 
           override val defaultOption: FeatureA
             get() = A
+
+          override val storageKey: String
+            get() = "io.mehow.FeatureA"
         }
         """
   }
@@ -198,6 +218,7 @@ class FeatureFlagModelTest {
         package io.mehow
 
         import io.mehow.laboratory.Feature
+        import kotlin.String
 
         public enum class FeatureA : Feature<FeatureA> {
           A,
@@ -205,6 +226,9 @@ class FeatureFlagModelTest {
 
           override val defaultOption: FeatureA
             get() = A
+
+          override val storageKey: String
+            get() = "io.mehow.FeatureA"
 
           override val defaultSource: Feature.Source
             get() = Feature.Source.Remote
@@ -240,6 +264,9 @@ class FeatureFlagModelTest {
           override val defaultOption: FeatureA
             get() = A
 
+          override val storageKey: String
+            get() = "io.mehow.FeatureA"
+
           override val description: String = "Feature description"
         }
         """
@@ -274,6 +301,9 @@ class FeatureFlagModelTest {
           override val defaultOption: FeatureA
             get() = A
 
+          override val storageKey: String
+            get() = "io.mehow.FeatureA"
+
           override val description: String =
               "Some [long hyperlink](https://square.github.io/kotlinpoet/1.x/kotlinpoet-classinspector-elements/com.squareup.kotlinpoet.classinspector.elements/) in the description."
         }
@@ -297,6 +327,7 @@ class FeatureFlagModelTest {
 
         import io.mehow.laboratory.BinaryFeature
         import kotlin.Boolean
+        import kotlin.String
 
         public enum class BinaryFeatureA(
           override val binaryValue: Boolean,
@@ -307,6 +338,9 @@ class FeatureFlagModelTest {
 
           override val defaultOption: BinaryFeatureA
             get() = A
+
+          override val storageKey: String
+            get() = "io.mehow.BinaryFeatureA"
         }
         """
   }
@@ -377,6 +411,7 @@ class FeatureFlagModelTest {
           import io.mehow.laboratory.Feature
           import kotlin.Deprecated
           import kotlin.DeprecationLevel
+          import kotlin.String
           import kotlin.Suppress
 
           @Deprecated(
@@ -390,6 +425,9 @@ class FeatureFlagModelTest {
             @Suppress("DEPRECATION")
             override val defaultOption: FeatureA
               get() = A
+
+            override val storageKey: String
+              get() = "io.mehow.FeatureA"
           }
           """
   }
@@ -412,6 +450,7 @@ class FeatureFlagModelTest {
           import io.mehow.laboratory.Feature
           import kotlin.Deprecated
           import kotlin.DeprecationLevel
+          import kotlin.String
           import kotlin.Suppress
 
           @Deprecated(
@@ -425,6 +464,9 @@ class FeatureFlagModelTest {
             @Suppress("DEPRECATION_ERROR")
             override val defaultOption: FeatureA
               get() = A
+
+            override val storageKey: String
+              get() = "io.mehow.FeatureA"
           }
           """
   }
@@ -447,6 +489,7 @@ class FeatureFlagModelTest {
           import io.mehow.laboratory.Feature
           import kotlin.Deprecated
           import kotlin.DeprecationLevel
+          import kotlin.String
           import kotlin.Suppress
 
           @Deprecated(
@@ -460,7 +503,41 @@ class FeatureFlagModelTest {
             @Suppress("DEPRECATION_ERROR")
             override val defaultOption: FeatureA
               get() = A
+
+            override val storageKey: String
+              get() = "io.mehow.FeatureA"
           }
           """
+  }
+
+  @Test
+  fun `storage key is the fully qualified feature class name`() {
+    val model =
+      FeatureFlagModel(
+        ClassName("io.mehow.sample.auth", "AuthType"),
+        listOf(FeatureFlagOption("Password", isDefault = true), FeatureFlagOption("Face")),
+      )
+
+    val fileSpec = model.prepare()
+
+    fileSpec shouldSpecify
+      """
+        package io.mehow.sample.auth
+
+        import io.mehow.laboratory.Feature
+        import kotlin.String
+
+        public enum class AuthType : Feature<AuthType> {
+          Password,
+          Face,
+          ;
+
+          override val defaultOption: AuthType
+            get() = Password
+
+          override val storageKey: String
+            get() = "io.mehow.sample.auth.AuthType"
+        }
+        """
   }
 }

@@ -1,9 +1,12 @@
 package io.mehow.laboratory.generator
 
 import com.squareup.kotlinpoet.ClassName
+import io.kotest.matchers.string.shouldContain
+import io.kotest.matchers.string.shouldNotContain
 import io.mehow.laboratory.generator.Visibility.Internal
 import io.mehow.laboratory.generator.Visibility.Public
 import io.mehow.laboratory.generator.test.shouldSpecify
+import kotlin.DeprecationLevel.WARNING
 import org.junit.Test
 
 class FeatureFactoryModelTest {
@@ -117,5 +120,38 @@ class FeatureFactoryModelTest {
           override fun create(): Set<KClass<out Feature<*>>> = emptySet<KClass<out Feature<*>>>()
         }
         """
+  }
+
+  @Test
+  fun `file-level deprecation suppress when any feature is deprecated`() {
+    val deprecatedFeature =
+      FeatureFlagModel(
+        ClassName("io.mehow", "DeprecatedFeature"),
+        listOf(FeatureFlagOption("A", isDefault = true)),
+        deprecation = Deprecation("Sample deprecation", WARNING),
+      )
+    val model =
+      FeatureFactoryModel(
+        ClassName("io.mehow", "Factory"),
+        listOf(featureA, deprecatedFeature),
+      )
+
+    val code = model.prepare().toString()
+
+    code shouldContain "@file:Suppress(\"DEPRECATION\")"
+    code shouldContain "DeprecatedFeature::class"
+  }
+
+  @Test
+  fun `no file-level deprecation suppress when no feature is deprecated`() {
+    val model =
+      FeatureFactoryModel(
+        ClassName("io.mehow", "Factory"),
+        listOf(featureA, featureB),
+      )
+
+    val code = model.prepare().toString()
+
+    code shouldNotContain "@file:Suppress"
   }
 }

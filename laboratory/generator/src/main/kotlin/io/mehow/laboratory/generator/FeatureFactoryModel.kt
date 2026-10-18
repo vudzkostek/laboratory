@@ -69,8 +69,19 @@ private class FeatureFactoryGenerator(factory: FeatureFactoryModel) {
       .addStatement("return %N", factoryType)
       .build()
 
+  private val suppressDeprecationFileAnnotation: AnnotationSpec? =
+    if (factory.features.any { it.deprecation != null }) {
+      AnnotationSpec.builder(Suppress::class)
+        .useSiteTarget(AnnotationSpec.UseSiteTarget.FILE)
+        .addMember("%S", "DEPRECATION")
+        .build()
+    } else {
+      null
+    }
+
   private val factoryFile =
     FileSpec.builder(factory.className.packageName, factory.className.simpleName)
+      .apply { suppressDeprecationFileAnnotation?.let(::addAnnotation) }
       .addFunction(factoryExtension)
       .addType(factoryType)
       .build()

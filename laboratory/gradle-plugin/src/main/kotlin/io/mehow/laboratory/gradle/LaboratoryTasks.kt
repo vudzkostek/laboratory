@@ -3,7 +3,6 @@ package io.mehow.laboratory.gradle
 import org.gradle.api.Project
 import org.gradle.api.Task
 import org.gradle.api.tasks.TaskProvider
-import org.jetbrains.kotlin.gradle.tasks.KotlinJvmCompile
 
 internal class LaboratoryTasks(
   private val featureFlagsTask: TaskProvider<FeatureFlagsTask>,
@@ -33,11 +32,11 @@ internal class LaboratoryTasks(
     }
   }
 
-  fun configureKotlinDependency(project: Project) {
-    outputTasks.forEach(project::configureKotlinDependency)
-  }
-
   fun contributeToSources(sources: ProjectSources) {
+    // Gradle wires implicit task dependencies when a TaskProvider is passed to `kotlin.srcDir(...)`
+    // or `variant.sources.kotlin.addGeneratedSourceDirectory(...)`. Downstream JVM, Android, and
+    // KMP native compile tasks all pick up the generated sources (and the producing task) through
+    // the source set wiring, so no explicit `tasks.withType(...).dependsOn(task)` call is needed.
     outputTasks.forEach(sources::srcDir)
   }
 
@@ -67,9 +66,3 @@ private inline fun <reified T : Task> Project.registerTask(
   name: String,
   crossinline action: (T) -> Unit,
 ) = tasks.register(name, T::class.java) { action(it) }
-
-private fun <T : Task> Project.configureKotlinDependency(task: TaskProvider<out T>) {
-  tasks.withType(KotlinJvmCompile::class.java).configureEach { kotlinTask ->
-    kotlinTask.dependsOn(task)
-  }
-}
