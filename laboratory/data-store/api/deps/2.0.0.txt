@@ -1,3 +1,0 @@
-androidx.datastore:datastore-core:1.2.0
-com.squareup.wire:wire-runtime:5.5.0
-org.jetbrains.kotlin:kotlin-stdlib:2.3.0

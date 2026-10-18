@@ -47,16 +47,6 @@ val dependencies =
   listOf(
     Lib(alias = "laboratory-runtime", artifactId = "laboratory", projectId = ":laboratory:shared"),
     Lib(
-      alias = "laboratory-sharedPrefernces",
-      artifactId = "laboratory-shared-preferences",
-      projectId = ":laboratory:shared-preferences",
-    ),
-    Lib(
-      alias = "laboratory-dataStore",
-      artifactId = "laboratory-data-store",
-      projectId = ":laboratory:data-store",
-    ),
-    Lib(
       alias = "laboratory-generator",
       artifactId = "laboratory-generator",
       projectId = ":laboratory:generator",

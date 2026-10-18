@@ -285,12 +285,12 @@ Scope: ~1 day.
 ### Phase 3 — DataStore (Okio) storage in `:shared` + delete `:shared-preferences`
 Scope: ~1 day.
 
-- [ ] Swap `androidx.datastore:datastore-core` for `androidx.datastore:datastore-core-okio` in the version catalog.
-- [ ] Keep the single `storage_data.proto` (shared Wire codegen target in `commonMain`).
-- [ ] Reimplement `DataStoreStorage` + `StorageDataSerializer` on `OkioSerializer<StorageData>`.
-- [ ] Add `expect fun dataStorePath(name: String): okio.Path` + Android/iOS/JVM actuals. Expose `Storage.Companion.dataStore(context: Context, name: String = "laboratory")` in `androidMain` and `Storage.Companion.dataStore(name: String = "laboratory")` in `iosMain`.
-- [ ] Delete `:laboratory:shared-preferences` entirely. Update any sample using it to call `dataStore(context)` instead.
-- [ ] Delete the old `:laboratory:data-store` module after its contents have moved into `:shared`.
+- [x] Swap `androidx.datastore:datastore-core` for `androidx.datastore:datastore-core-okio` in the version catalog.
+- [x] Keep the single `storage_data.proto` (shared Wire codegen target in `commonMain`).
+- [x] Reimplement `DataStoreStorage` + `StorageDataSerializer` on `OkioSerializer<StorageData>`.
+- [x] Add `expect fun dataStorePath(name: String): okio.Path` + Android/iOS/JVM actuals. Expose `Storage.Companion.dataStore(context: Context, name: String = "laboratory")` in `androidMain` and `Storage.Companion.dataStore(name: String = "laboratory")` in `iosMain`.
+- [x] Delete `:laboratory:shared-preferences` entirely. Update any sample using it to call `dataStore(context)` instead.
+- [x] Delete the old `:laboratory:data-store` module after its contents have moved into `:shared`.
 - **Acceptance:** `AbstractStorageTest` runs green in `commonTest` with `InMemoryStorage` and `DataStoreStorage` (tmp dir). Android + iOS smoke tests write and read a flag through the real DataStore on each platform.
 
 ### Phase 4 — Gradle plugin + generator rework for KMP
@@ -351,7 +351,7 @@ All resolved by the user. Decisions carried into §7 Conventions.
 - [x] Phase 0 — Analysis + plan (this document)
 - [x] Phase 1 — Workspace plumbing + `:shared` KMP scaffold
 - [x] Phase 2 — Port runtime core to `commonMain` (+ KClass propagation into Android inspector)
-- [ ] Phase 3 — DataStore (Okio) storage + delete `:shared-preferences` + delete `:data-store`
+- [x] Phase 3 — DataStore (Okio) storage + delete `:shared-preferences` + delete `:data-store`
 - [ ] Phase 4 — Gradle plugin + generator rework for KMP
 - [ ] Phase 5 — Compose Multiplatform inspector (`:inspector-cmp`)
 - [ ] Phase 6 — Samples, docs, publishing
@@ -409,3 +409,35 @@ Session notes go **below this line** — the agent for each phase appends a brie
   - `:data-store` module currently depends on `:shared` (api). After Phase 3 moves the DataStore impl into `:shared/commonMain` (+ platform actuals), delete `:data-store` from settings and strip the `wire` plugin from its own build file; `:shared` will apply `wire { kotlin {} }` instead.
   - The temporary `expect fun KClass<out Feature<*>>.optionsRaw(): List<Feature<*>>` throws on iOS. Phase 4 replaces it with a generator-populated map so even non-reified iOS call sites work. Nothing in Phase 3 should hit it, but if a DataStore test triggers it on iOS, use a reified call site.
   - The pre-existing full-graph Spotless config-cache issue noted in Phase 1 still applies — `./gradlew build` passes with `--no-configuration-cache`; narrower task graphs store the config cache fine.
+
+---
+### Phase 3 — 2026-10-18
+- Catalog: renamed `androidx-datastore` library coordinate from `datastore-core` to `datastore-core-okio` (same version alias, KMP variant). Added `okio = "3.9.1"` version pin plus `okio` and `okio-fakefilesystem` library aliases. Wire plugin + runtime already pinned via Phase 1 catalog, no changes needed there.
+- Moved the proto to `laboratory/shared/src/commonMain/proto/io/mehow/laboratory/datastore/storage_data.proto` (unchanged `syntax = "proto3"`, package `io.mehow.laboratory.datastore`, message `StorageData` with `map<string, string> strings` + `map<string, bool> booleans`). Applied `alias(libs.plugins.wire)` to `:shared/build.gradle.kts` with `wire { sourcePath { srcDir("src/commonMain/proto") }; kotlin {} }`. Wire's KMP mode generates the message class into `commonMain` via the `generateCommonMainProtos` task.
+- Added to `:shared/commonMain`:
+  - `datastore/DataStoreStorage.kt` — `internal class DataStoreStorage(DataStore<StorageData>) : Storage` + `public fun Storage.Companion.dataStore(dataStore: DataStore<StorageData>): Storage` factory. Catch sites use `okio.IOException` (KMP) instead of `androidx.datastore.core.IOException` (JVM-only).
+  - `datastore/StorageDataSerializer.kt` — `object : OkioSerializer<StorageData>` reading/writing `okio.BufferedSource/BufferedSink`; delegates to `StorageData.ADAPTER.decode(source)` / `.encode(sink, t)` which is KMP since Wire 4.
+  - `datastore/DataStorePath.kt` — `internal expect fun defaultDataStorePath(name: String): okio.Path`.
+- Added platform actuals + convenience factories:
+  - `androidMain/DataStorePath.android.kt` — `defaultDataStorePath` throws `UnsupportedOperationException` (Android needs a `Context`). The real entry point is `public fun Storage.Companion.dataStore(context: Context, name: String = "laboratory"): Storage` resolving `context.filesDir/datastore/$name.pb` and building `DataStoreFactory.create(storage = OkioStorage(FileSystem.SYSTEM, StorageDataSerializer) { path })`.
+  - `iosMain/DataStorePath.ios.kt` — `defaultDataStorePath` resolves `NSFileManager.default.URLForDirectory(NSApplicationSupportDirectory, …, create = true)`, creates `<AppSupport>/laboratory/` via `createDirectoryAtPath(withIntermediateDirectories = true)`, returns `<AppSupport>/laboratory/$name.pb`. Public entry: `fun Storage.Companion.dataStore(name: String = "laboratory"): Storage`. Opts in to `kotlinx.cinterop.ExperimentalForeignApi`.
+  - `jvmMain/DataStorePath.jvm.kt` — `defaultDataStorePath` resolves `${user.home}/.laboratory/$name.pb`. Public entry: `fun Storage.Companion.dataStore(name: String = "laboratory"): Storage`.
+- Tests:
+  - Ported `AbstractStorageTest` from `:testing` (JUnit, string-named tests) into `:shared/commonTest/kotlin/io/mehow/laboratory/testing/AbstractStorageTest.kt` using `kotlin.test` + `kotest-assertions-core` + `turbine` + `kotlinx-coroutines-test`. 15 cases, same coverage.
+  - Added `:shared/commonTest/.../datastore/DataStoreStorageTest : AbstractStorageTest()` backed by `FakeFileSystem()` + `OkioStorage(fakeFs, StorageDataSerializer) { "/laboratory-<rand>.pb".toPath() }` so the suite runs on JVM, Android (host test), iosSimulatorArm64 without a real filesystem.
+  - Left the existing `InMemoryStorageTest` in commonTest untouched.
+  - Deleted the old JVM `DataStoreStorageTest` with the module.
+- Deleted `laboratory/data-store/` and `laboratory/shared-preferences/` directories wholesale. Removed both entries from the root `settings.gradle.kts` include list and from the dokka block in the root `build.gradle.kts`.
+- Samples: three Android samples (`basic`, `default-option`, `multi-module`) consumed `laboratory.dataStore`. Rewrote each `Application.kt` to call `Storage.dataStore(this)` (new Android entry point) instead of hand-wiring `DataStoreFactory.create(StorageDataSerializer) { File(filesDir, …) }`. Switched their `build.gradle.kts` dependency alias from `libs.laboratory.dataStore` to `libs.laboratory.runtime`. Removed the `laboratory-dataStore` and `laboratory-sharedPrefernces` entries from `samples/settings.gradle.kts`.
+- Regenerated `laboratory/shared/api/jvm/shared.api` via `apiDump`; it now includes `DataStorePath_jvmKt.dataStore`, `DataStoreStorageKt.dataStore`, `StorageData` + `StorageData$Companion`, and `StorageDataSerializer : OkioSerializer<StorageData>` (Okio-based signature). Also applied spotless formatting across the new files.
+- Verified:
+  - `./gradlew :laboratory:shared:build --no-configuration-cache` → BUILD SUCCESSFUL (iOS, JVM, Android compile + tests; iosSimulatorArm64Test ran, iosX64Test skipped on arm64 host).
+  - `./gradlew :laboratory:shared:allTests --no-configuration-cache` → BUILD SUCCESSFUL. New `DataStoreStorageTest` (Okio FakeFileSystem) + ported `AbstractStorageTest` cases pass across jvm, androidHostTest, iosSimulatorArm64; the existing `InMemoryStorageTest` still green.
+  - `./gradlew :laboratory:shared:apiDump --no-configuration-cache` → committed updated `shared.api`.
+  - `./gradlew build --no-configuration-cache` → BUILD SUCCESSFUL across 215 tasks (two legacy modules gone, nothing left referencing them).
+  - `./gradlew :laboratory:shared:publishToMavenLocal --no-configuration-cache` → BUILD SUCCESSFUL. Artifacts still publish as `io.mehow.laboratory:shared*` at `2.0.4-SNAPSHOT` (coordinate rename deferred to Phase 6).
+- **Tripwires for Phase 4:**
+  - The `samples/` sub-build is **not** covered by root `./gradlew build` (it's a separate build via `includeBuild("..")` in `samples/settings.gradle.kts`). Running `./gradlew assemble` inside `samples/` currently fails compiling `samples/basic` because Phase 2's generator emits `LogType::class` and `LogType` is annotated `@Deprecated("Sample deprecation")` by the Laboratory DSL — the sample's convention plugin treats warnings as errors, so the `KClass` reference now triggers a hard failure that didn't exist when the generator emitted `Class.forName("…")` strings. Pre-existing from Phase 2; Phase 4's generator rework should emit `@file:Suppress("DEPRECATION")` (or an equivalent per-call opt-in) on `GeneratedFeatureFactory` so sample builds stay green.
+  - Wire 6.4.0 + KMP + the new AGP KMP library plugin require pointing Wire at `src/commonMain/proto` explicitly via `sourcePath { srcDir("src/commonMain/proto") }` (the default `src/main/proto` path doesn't apply under the KMP source-set layout). If Phase 4 moves things around, keep that call.
+  - On Android the public `Storage.Companion.dataStore(context, name)` factory produces a different on-disk path than before: `${filesDir}/datastore/<name>.pb` with `name = "laboratory"`. The old sample code wrote to `${filesDir}/datastore/local` with no `.pb` extension. For consumers who upgrade without renaming, this effectively resets stored flags — matches the plan's "no SharedPreferences migration helper; users lose selected flags" decision, but worth calling out in release notes.
+  - The config-cache / Spotless predeclare issue from Phase 1 still applies; this phase ran everything with `--no-configuration-cache`.

@@ -44,11 +44,9 @@ subprojects {
 }
 
 dependencies {
-  dokka(project(":laboratory:data-store"))
   dokka(project(":laboratory:generator"))
   dokka(project(":laboratory:gradle-plugin"))
   dokka(project(":laboratory:hyperion-plugin"))
   dokka(project(":laboratory:inspector"))
   dokka(project(":laboratory:shared"))
-  dokka(project(":laboratory:shared-preferences"))
 }

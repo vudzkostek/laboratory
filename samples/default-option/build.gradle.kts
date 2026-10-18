@@ -20,6 +20,6 @@ dependencies {
   implementation(libs.coroutines.android)
   implementation(libs.android.material)
   implementation(libs.hyperion.core)
-  implementation(libs.laboratory.dataStore)
+  implementation(libs.laboratory.runtime)
   implementation(libs.laboratory.hyperionPlugin)
 }

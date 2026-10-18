@@ -3,7 +3,15 @@ plugins {
   alias(libs.plugins.agp.kotlin.multiplatform.library)
   alias(libs.plugins.maven.publish)
   alias(libs.plugins.dokka)
+  alias(libs.plugins.wire)
   alias(libs.plugins.laboratory.convention)
+}
+
+wire {
+  // Wire's KMP mode wires generated sources into commonMain automatically.
+  // We also point the sourcePath at the KMP-style proto location.
+  sourcePath { srcDir("src/commonMain/proto") }
+  kotlin {}
 }
 
 kotlin {
@@ -21,7 +29,12 @@ kotlin {
 
   sourceSets {
     val commonMain by getting {
-      dependencies { api(libs.coroutines.core) }
+      dependencies {
+        api(libs.coroutines.core)
+        api(libs.androidx.datastore)
+        api(libs.wire)
+        implementation(libs.okio)
+      }
     }
     val commonTest by getting {
       dependencies {
@@ -29,6 +42,7 @@ kotlin {
         implementation(libs.coroutines.test)
         implementation(libs.turbine)
         implementation(libs.kotest.assertions)
+        implementation(libs.okio.fakefilesystem)
       }
     }
     val jvmMain by getting {

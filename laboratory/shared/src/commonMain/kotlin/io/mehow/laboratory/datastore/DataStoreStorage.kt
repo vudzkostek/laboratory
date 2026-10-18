@@ -1,12 +1,12 @@
 package io.mehow.laboratory.datastore
 
 import androidx.datastore.core.DataStore
-import androidx.datastore.core.IOException
 import io.mehow.laboratory.Storage
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
+import okio.IOException
 
 /** Creates a [Storage] that is backed by [DataStore]. */
 public fun Storage.Companion.dataStore(dataStore: DataStore<StorageData>): Storage =
