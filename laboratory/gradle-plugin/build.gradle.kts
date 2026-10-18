@@ -36,6 +36,9 @@ dependencies {
   implementation(projects.laboratory.generator)
   implementation(libs.gradle.agp.api)
   implementation(libs.gradle.kgp.api)
+  // KotlinMultiplatformExtension lives in the full `kotlin-gradle-plugin` jar (not kgp-api).
+  // The plugin is applied by consumers' projects, so pull it in as compileOnly here.
+  compileOnly(libs.gradle.kgp)
 
   testImplementation(projects.laboratory.testing)
   testImplementation(libs.junit)

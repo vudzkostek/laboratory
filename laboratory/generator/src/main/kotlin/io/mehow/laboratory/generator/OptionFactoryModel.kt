@@ -1,5 +1,6 @@
 package io.mehow.laboratory.generator
 
+import com.squareup.kotlinpoet.AnnotationSpec
 import com.squareup.kotlinpoet.ClassName
 import com.squareup.kotlinpoet.CodeBlock
 import com.squareup.kotlinpoet.FileSpec
@@ -154,8 +155,19 @@ private class OptionFactoryGenerator(private val model: OptionFactoryModel) {
       .addStatement("return %N", factoryType)
       .build()
 
+  private val suppressDeprecationFileAnnotation: AnnotationSpec? =
+    if (model.features.any { it.deprecation != null }) {
+      AnnotationSpec.builder(Suppress::class)
+        .useSiteTarget(AnnotationSpec.UseSiteTarget.FILE)
+        .addMember("%S", "DEPRECATION")
+        .build()
+    } else {
+      null
+    }
+
   val fileSpec =
     FileSpec.builder(model.className.packageName, model.className.simpleName)
+      .apply { suppressDeprecationFileAnnotation?.let(::addAnnotation) }
       .addFunction(factoryExtension)
       .addType(factoryType)
       .build()

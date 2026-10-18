@@ -5,7 +5,7 @@ import kotlin.reflect.KClass
 import kotlinx.atomicfu.atomic
 import kotlinx.atomicfu.update
 
-// TODO Phase 4: replace with a generator-populated KClass -> List<Feature<*>> registry so this
+// TODO Phase 5: replace with a generator-populated KClass -> List<Feature<*>> registry so this
 // reflection-based bridge can go away on every platform.
 private val cache = atomic<Map<KClass<out Feature<*>>, List<Feature<*>>>>(emptyMap())
 

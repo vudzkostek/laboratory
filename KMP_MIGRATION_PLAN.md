@@ -296,15 +296,16 @@ Scope: ~1 day.
 ### Phase 4 — Gradle plugin + generator rework for KMP
 Scope: ~1 day.
 
-- [ ] Delete the KMP guard in `LaboratoryPlugin.kt`; add `ProjectSources.KotlinMultiplatform`.
-- [ ] Register the generated source directory via `kotlin.sourceSets.commonMain.kotlin.srcDir(task)`; keep the existing Android/Kotlin JVM branches.
-- [ ] Replace `KotlinJvmCompile` dependency wiring with implicit Gradle wiring via `srcDir(TaskProvider)`.
-- [ ] Teach the generator to emit:
-  - a `const val storageKey = "<fqcn>"` on every generated enum,
-  - `FeatureFactory.create()` returning `Set<KClass<out Feature<*>>>`,
-  - a generated `KClass<out Feature<*>>.options: List<Feature<*>>` lookup table that the runtime consumes directly (replaces `FeatureType.kt` reflection).
-- [ ] Teach the plugin's `addLaboratoryDependency` to detect KMP and add to `commonMain.dependencies.api(...)`.
-- [ ] Update the integration tests in `:gradle-plugin` to cover a KMP consumer (`KotlinMultiplatformIntegrationTest`).
+- [x] Delete the KMP guard in `LaboratoryPlugin.kt`; add `ProjectSources.KotlinMultiplatform`.
+- [x] Register the generated source directory via `kotlin.sourceSets.commonMain.kotlin.srcDir(task)`; keep the existing Android/Kotlin JVM branches.
+- [x] Replace `KotlinJvmCompile` dependency wiring with implicit Gradle wiring via `srcDir(TaskProvider)`.
+- [x] Teach the generator to emit:
+  - [x] an `override val storageKey: String get() = "<fqcn>"` on every generated enum,
+  - [x] `FeatureFactory.create()` returning `Set<KClass<out Feature<*>>>` (shipped in Phase 2),
+  - [ ] a generated `KClass<out Feature<*>>.options: List<Feature<*>>` lookup table that the runtime consumes directly — deferred to Phase 5 (iOS keeps the reified-only path for now; see §C in the Phase 4 session notes below).
+- [x] Teach the plugin's `addLaboratoryDependency` to detect KMP and add to `commonMain.dependencies.api(...)`.
+- [x] Update the integration tests in `:gradle-plugin` to cover a KMP consumer (`KotlinMultiplatformIntegrationTest`).
+- [x] Emit `@file:Suppress("DEPRECATION")` on `GeneratedFeatureFactory` / `GeneratedOptionFactory` whenever any input feature is `@Deprecated` so sample builds that treat deprecation warnings as errors stay green.
 - **Acceptance:** `:gradle-plugin:test` is green with new coverage. Applying `io.mehow.laboratory` to a KMP sample module generates `commonMain` sources that compile on all targets.
 
 ### Phase 5 — Compose Multiplatform inspector (`:inspector-cmp`)
@@ -352,7 +353,7 @@ All resolved by the user. Decisions carried into §7 Conventions.
 - [x] Phase 1 — Workspace plumbing + `:shared` KMP scaffold
 - [x] Phase 2 — Port runtime core to `commonMain` (+ KClass propagation into Android inspector)
 - [x] Phase 3 — DataStore (Okio) storage + delete `:shared-preferences` + delete `:data-store`
-- [ ] Phase 4 — Gradle plugin + generator rework for KMP
+- [x] Phase 4 — Gradle plugin + generator rework for KMP
 - [ ] Phase 5 — Compose Multiplatform inspector (`:inspector-cmp`)
 - [ ] Phase 6 — Samples, docs, publishing
 
@@ -441,3 +442,39 @@ Session notes go **below this line** — the agent for each phase appends a brie
   - Wire 6.4.0 + KMP + the new AGP KMP library plugin require pointing Wire at `src/commonMain/proto` explicitly via `sourcePath { srcDir("src/commonMain/proto") }` (the default `src/main/proto` path doesn't apply under the KMP source-set layout). If Phase 4 moves things around, keep that call.
   - On Android the public `Storage.Companion.dataStore(context, name)` factory produces a different on-disk path than before: `${filesDir}/datastore/<name>.pb` with `name = "laboratory"`. The old sample code wrote to `${filesDir}/datastore/local` with no `.pb` extension. For consumers who upgrade without renaming, this effectively resets stored flags — matches the plan's "no SharedPreferences migration helper; users lose selected flags" decision, but worth calling out in release notes.
   - The config-cache / Spotless predeclare issue from Phase 1 still applies; this phase ran everything with `--no-configuration-cache`.
+
+---
+### Phase 4 — 2026-10-18
+- **Gradle plugin — KMP support.**
+  - Removed the explicit `error()` on `org.jetbrains.kotlin.multiplatform` in `LaboratoryPlugin.kt`. Added a `withPlugins("org.jetbrains.kotlin.multiplatform")` branch that flips both `hasKotlin` and a new `hasKmp` flag.
+  - Added `ProjectSources.KotlinMultiplatform(Project)` in `ProjectSources.kt`. Its `srcDir(task)` resolves `KotlinMultiplatformExtension` and calls `extension.sourceSets.getByName("commonMain").kotlin.srcDir(task)`, so the three generator tasks contribute into `commonMain` and every target compile (JVM / Android / iosArm64 / iosSimulatorArm64 / iosX64 / …) picks them up automatically.
+  - `LaboratoryPlugin.contributeToSourcesAfterEvaluation()` now picks the source contribution with a priority order: **KMP > Android (via `onVariants`) > Kotlin JVM**. If KMP is detected, we never go down the Android or plain-Kotlin paths, which avoids double-adding sources on a KMP+Android project.
+  - Deleted the `tasks.withType(KotlinJvmCompile::class.java).configureEach { dependsOn(task) }` wiring in `LaboratoryTasks.configureKotlinDependency`. Gradle wires implicit dependencies via `kotlin.srcDir(TaskProvider)` / `variant.sources.kotlin.addGeneratedSourceDirectory(...)` on every path, so native + JVM + Android compile tasks pick up the generators without hard-coding `KotlinJvmCompile`.
+  - `addLaboratoryDependency()` now dispatches on `hasKmp`: KMP projects get `kotlin.sourceSets.getByName("commonMain").dependencies { api(coordinate) }`; everyone else keeps the old `dependencies.add("api", ...)`.
+  - Added a `compileOnly(libs.gradle.kgp)` to `laboratory/gradle-plugin/build.gradle.kts` because `KotlinMultiplatformExtension` lives in the full `kotlin-gradle-plugin` jar, not `kotlin-gradle-plugin-api` (which is `implementation`).
+  - Added `src/test/projects/integration-kotlin-multiplatform/` fixture (applies `kotlin("multiplatform")` + `io.mehow.laboratory`, declares a `jvm()` target, configures one feature + both factories) and `KotlinMultiplatformIntegrationTest.kt`. It builds all three laboratory tasks, asserts `GeneratedFeatureFactory` / `GeneratedOptionFactory` include the single feature, and proves the generated files land in `commonMain`.
+- **Generator — `storageKey` emission + file-level deprecation suppress.**
+  - `FeatureFlagGenerator` now adds `override val storageKey: String get() = "<fqcn>"` to every generated enum (the fqcn is `className.canonicalName` captured at generation time, byte-for-byte identical to the previous JVM reflection output, preserving on-disk DataStore keys).
+  - To make that `override` legal in `commonMain`, moved the Phase-2 `public val Feature<*>.storageKey: String` extension into the `Feature` interface as a member with the same default (`this::class.qualifiedName ?: this::class.simpleName!!`). The default kicks in for hand-rolled `Feature` enums (including the `TestFeatures` in `commonTest`); generator-emitted enums always override it. The `internal val KClass<out Feature<*>>.storageKey` in `OptionStorage.kt` stays unchanged.
+  - `FeatureFactoryModel` / `OptionFactoryModel` now emit `@file:Suppress("DEPRECATION")` at the top of their generated files whenever **any** input feature has a non-null `deprecation`. Added `AnnotationSpec.builder(Suppress::class).useSiteTarget(AnnotationSpec.UseSiteTarget.FILE)...` to both generators. Fixes the Phase 3 tripwire where `samples/basic` failed to compile because the convention plugin treats deprecation warnings as errors and the generator emits `LogType::class`.
+  - Updated the full `FeatureFlagModelTest` set of expected outputs to include the `storageKey` override and the auto-inserted `import kotlin.String` across every emission test (used a one-shot script in the scratchpad; backing-store deprecations were already covered by the existing `@Suppress("DEPRECATION")` annotations on individual properties).
+  - New generator tests:
+    - `FeatureFlagModelTest.storage key is the fully qualified feature class name` — enum emission with a non-trivial package proves the FQCN propagates.
+    - `FeatureFactoryModelTest.file-level deprecation suppress when any feature is deprecated` / `no file-level deprecation suppress when no feature is deprecated`.
+    - `OptionFactoryModelTest.file-level deprecation suppress when any feature is deprecated` / `no file-level deprecation suppress when no feature is deprecated`.
+- **iOS runtime decision: option (a).** Kept `FeatureType.ios.kt`'s `optionsRaw()` throwing `NotImplementedError` (updated the TODO comment to point at Phase 5 and clarified in the error message that iOS consumers must use reified APIs). The three TODO notes in `FeatureType.kt` common and the JVM / Android actuals were all re-aimed at Phase 5 — the generator-emitted options registry will be plumbed through `FeatureFactory` when `:inspector-cmp` needs it there. iOS consumers already hit `experiment<T>()` / `observe<T>()` which route through `enumValues<T>()` and never touch this bridge, so the current path is complete for Phase 4's needs.
+- **API dump + storage key preservation.** Regenerated `laboratory/shared/api/jvm/shared.api` with `./gradlew :laboratory:shared:apiDump --no-configuration-cache` — the old `FeatureKt.getStorageKey(Feature)` top-level accessor is gone and replaced by a member `getStorageKey()$default$Companion`-style surface on each implementor (the member hides the extension). JVM/Android ABI stays binary-compatible for consumers that only call `feature.storageKey` from Kotlin source.
+- **Verifications (all `--no-configuration-cache`, pre-existing Spotless-predeclare / config-cache issue is unchanged):**
+  - `./gradlew :laboratory:gradle-plugin:build` → BUILD SUCCESSFUL. All plugin tests including the new `KotlinMultiplatformIntegrationTest` pass; `validatePlugins` green.
+  - `./gradlew :laboratory:generator:build` → BUILD SUCCESSFUL. New storageKey + deprecation-suppress tests green; existing emission tests updated.
+  - `./gradlew :laboratory:shared:build` → BUILD SUCCESSFUL (jvm + android + iosSimulatorArm64 compile & tests; iosX64Test SKIPPED on arm64 host as expected).
+  - `./gradlew :laboratory:shared:apiDump` → committed updated `shared.api`.
+  - `./gradlew build` → BUILD SUCCESSFUL across 215 tasks.
+  - `samples/./gradlew :basic:assemble` → BUILD SUCCESSFUL. Proves the `@file:Suppress("DEPRECATION")` fix (`LogType::class` reference inside `GeneratedFeatureFactory`) and the new `storageKey` emission compile under the sample's `allWarningsAsErrors` convention.
+  - `./gradlew :laboratory:shared:publishToMavenLocal` → BUILD SUCCESSFUL. Still at `io.mehow.laboratory:shared*:2.0.4-SNAPSHOT` as planned (artifact-id/version rename deferred to Phase 6).
+- **Tripwires for Phase 5:**
+  - `storageKey` is now a `Feature` member — any custom `Feature` implementations in the inspector / consumer code can override it or inherit the default. The CMP inspector should NOT compute storage keys from `KClass.qualifiedName` any more; use `feature.storageKey` (member) or ask the generator for a registry.
+  - The generator-emitted options registry (`FeatureFactory` extension that returns `List<Feature<*>>` for a given `KClass`) is **not** wired yet. Phase 5 will need it for iOS inspector support. The groundwork: `FeatureFactory` currently returns `Set<KClass<out Feature<*>>>` and the generator already enumerates every feature at build time; attach a second `fun options(feature: KClass<out Feature<*>>): List<Feature<*>>?` to the generated factory and update `OptionStorage`/`FeatureType` to prefer it over reflection.
+  - The gradle-plugin's `compileOnly(libs.gradle.kgp)` surfaces `KotlinMultiplatformExtension` without pulling KGP into the plugin's runtime classpath. Phase 5's `:inspector-cmp` work will apply `org.jetbrains.compose` on consumers — the laboratory plugin itself doesn't care, but if Phase 5 adds auto-wiring on the plugin side it may need to make the KGP dependency `implementation` instead.
+  - The gradle-plugin integration-test fixture leaves `build/` dirs under `src/test/projects/.../build/`. Spotless `src/**/*.kt` picks them up on subsequent runs, so run `rm -rf laboratory/gradle-plugin/src/test/projects/*/build` before `./gradlew build` when iterating locally.
+  - Pre-existing Spotless predeclare / configuration-cache incompatibility noted since Phase 1 still applies — everything was verified with `--no-configuration-cache`.

@@ -10,8 +10,8 @@ import kotlin.reflect.KClass
  * unsupported on iOS (which should use the reified `experiment<T>()` / `observe<T>()` APIs
  * instead).
  *
- * TODO Phase 4: replace with a generator-populated registry so none of this needs reflection on any
- * platform.
+ * TODO Phase 5: route this through a generator-emitted registry attached to `FeatureFactory` so
+ * non-reified KClass-based lookups work on every platform (including iOS) without reflection.
  */
 @InternalLaboratoryApi public expect fun KClass<out Feature<*>>.optionsRaw(): List<Feature<*>>
 

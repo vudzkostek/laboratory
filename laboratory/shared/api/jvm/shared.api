@@ -5,6 +5,7 @@ public abstract interface class io/mehow/laboratory/BinaryFeature : io/mehow/lab
 public final class io/mehow/laboratory/BinaryFeature$DefaultImpls {
 	public static fun getDefaultSource (Lio/mehow/laboratory/BinaryFeature;)Lio/mehow/laboratory/Feature$Source;
 	public static fun getDescription (Lio/mehow/laboratory/BinaryFeature;)Ljava/lang/String;
+	public static fun getStorageKey (Lio/mehow/laboratory/BinaryFeature;)Ljava/lang/String;
 }
 
 public abstract interface annotation class io/mehow/laboratory/BlockingIoCall : java/lang/annotation/Annotation {
@@ -55,11 +56,13 @@ public abstract interface class io/mehow/laboratory/Feature {
 	public fun getDefaultSource ()Lio/mehow/laboratory/Feature$Source;
 	public fun getDescription ()Ljava/lang/String;
 	public abstract fun getName ()Ljava/lang/String;
+	public fun getStorageKey ()Ljava/lang/String;
 }
 
 public final class io/mehow/laboratory/Feature$DefaultImpls {
 	public static fun getDefaultSource (Lio/mehow/laboratory/Feature;)Lio/mehow/laboratory/Feature$Source;
 	public static fun getDescription (Lio/mehow/laboratory/Feature;)Ljava/lang/String;
+	public static fun getStorageKey (Lio/mehow/laboratory/Feature;)Ljava/lang/String;
 }
 
 public final class io/mehow/laboratory/Feature$Source : java/lang/Enum {
@@ -83,10 +86,6 @@ public final class io/mehow/laboratory/FeatureFactory$Companion {
 
 public final class io/mehow/laboratory/FeatureFactory$DefaultImpls {
 	public static fun plus (Lio/mehow/laboratory/FeatureFactory;Lio/mehow/laboratory/FeatureFactory;)Lio/mehow/laboratory/FeatureFactory;
-}
-
-public final class io/mehow/laboratory/FeatureKt {
-	public static final fun getStorageKey (Lio/mehow/laboratory/Feature;)Ljava/lang/String;
 }
 
 public final class io/mehow/laboratory/Laboratory {

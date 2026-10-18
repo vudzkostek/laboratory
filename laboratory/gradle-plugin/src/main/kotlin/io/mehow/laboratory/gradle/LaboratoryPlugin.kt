@@ -5,6 +5,7 @@ import com.android.build.api.variant.AndroidComponentsExtension
 import java.util.concurrent.atomic.AtomicBoolean
 import org.gradle.api.Plugin
 import org.gradle.api.Project
+import org.jetbrains.kotlin.gradle.dsl.KotlinMultiplatformExtension
 
 /**
  * Applies the Laboratory Gradle plugin to a project.
@@ -13,20 +14,22 @@ import org.gradle.api.Project
  * - Registers the `laboratory` extension used for configuration.
  * - Configures code generation tasks for feature flags and related helpers.
  *
- * The Kotlin Gradle plugin must be applied before this plugin.
+ * A Kotlin plugin (`org.jetbrains.kotlin.jvm`, `org.jetbrains.kotlin.android`, or
+ * `org.jetbrains.kotlin.multiplatform`) must be applied before this plugin.
  */
 public class LaboratoryPlugin : Plugin<Project> {
   private val hasKotlin = AtomicBoolean(false)
   private val hasAndroid = AtomicBoolean(false)
+  private val hasKmp = AtomicBoolean(false)
 
   override fun apply(target: Project) {
     val extension = target.extensions.create(PluginName, LaboratoryExtension::class.java)
     val tasks = LaboratoryTasks.registerIn(target)
     tasks.configureInput(target, extension)
-    tasks.configureKotlinDependency(target)
 
     target.withPlugins("org.jetbrains.kotlin.multiplatform") {
-      error("Laboratory Gradle plugin is not supported in Kotlin Multiplatform projects.")
+      hasKotlin.set(true)
+      hasKmp.set(true)
     }
 
     target.withPlugins(
@@ -52,7 +55,7 @@ public class LaboratoryPlugin : Plugin<Project> {
     }
 
     target.afterEvaluate {
-      target.contributeToSources(tasks, ProjectSources.Kotlin(target))
+      target.contributeToSourcesAfterEvaluation(tasks)
       target.addLaboratoryDependency()
     }
   }
@@ -66,21 +69,33 @@ public class LaboratoryPlugin : Plugin<Project> {
     }
   }
 
-  private fun Project.contributeToSources(tasks: LaboratoryTasks, sources: ProjectSources) {
-    val isKotlinContribution =
-      when (sources) {
-        is ProjectSources.Kotlin -> true
-        is ProjectSources.Android -> false
-      }
-    if (hasAndroid.get() && isKotlinContribution) {
-      return
+  private fun Project.contributeToSourcesAfterEvaluation(tasks: LaboratoryTasks) {
+    check(hasKotlin.get()) { "Laboratory Gradle plugin applied in '$path' requires Kotlin plugin." }
+    // Priority: KMP > Android > Kotlin JVM. Android is wired up eagerly in `onVariants`;
+    // we only contribute here for KMP (commonMain) and pure Kotlin JVM projects.
+    when {
+      hasKmp.get() -> tasks.contributeToSources(ProjectSources.KotlinMultiplatform(this))
+      hasAndroid.get() -> Unit // Already contributed via onVariants.
+      else -> tasks.contributeToSources(ProjectSources.Kotlin(this))
     }
+  }
+
+  private fun Project.contributeToSources(tasks: LaboratoryTasks, sources: ProjectSources) {
+    // Android variant callback path. Skip if this is a KMP + Android project; the KMP branch
+    // contributes to commonMain and we would otherwise double-add sources on the Android variant.
+    if (hasKmp.get()) return
     check(hasKotlin.get()) { "Laboratory Gradle plugin applied in '$path' requires Kotlin plugin." }
     tasks.contributeToSources(sources)
   }
 
   private fun Project.addLaboratoryDependency() {
-    dependencies.add("api", "io.mehow.laboratory:laboratory:$LibraryVersion")
+    val coordinate = "io.mehow.laboratory:laboratory:$LibraryVersion"
+    if (hasKmp.get()) {
+      val extension = extensions.getByType(KotlinMultiplatformExtension::class.java)
+      extension.sourceSets.getByName("commonMain").dependencies { api(coordinate) }
+    } else {
+      dependencies.add("api", coordinate)
+    }
   }
 }
 
