@@ -2,18 +2,21 @@
 
 > **Fork notice.** This is a Kotlin Multiplatform fork of **[MiSikora/laboratory](https://github.com/MiSikora/laboratory)**. The original project — authored by Michał Sikora — is Android-only and the canonical source of the design, documentation, and changelog. Please consult the [original project website](https://mehow.io/laboratory/) for conceptual docs; this README covers only what differs in the KMP fork.
 
-Feature flags for Kotlin projects — now on **Android, iOS, and JVM** through a single KMP SDK.
+Feature flags for Kotlin Multiplatform projects — one SDK that works on **Android, iOS, and JVM** from `commonMain`.
 
 ## What changed vs. the original
 
-- One SDK artifact (`io.mehow.laboratory:laboratory`) replaces the per-module `:runtime` / `:data-store` / `:shared-preferences` split. DataStore (Okio) is the only storage backend; `SharedPreferences` support has been removed.
-- Public API uses `KClass<out Feature<*>>` instead of `Class<out Feature<*>>`. Call sites change from `AuthType::class.java` to `AuthType::class`. This is a breaking change versus the original 2.x.
-- A new Compose Multiplatform debug inspector (`:inspector-cmp`) is available on Android and iOS. On iOS it's exposed as a single-call `UIViewController` factory. On Android the original Hyperion/Views inspector is kept and still works unchanged — Android consumers can use either.
-- The Gradle plugin supports KMP consumers: generated flags land in `commonMain`.
+- One SDK artifact (`laboratory`) replaces the per-module `:runtime` / `:data-store` / `:shared-preferences` split from 2.x. DataStore (Okio) is the only storage backend; `SharedPreferences` support has been removed.
+- Public API uses `KClass<out Feature<*>>` instead of `Class<out Feature<*>>`. Call sites change from `AuthType::class.java` to `AuthType::class`. Breaking vs. the original 2.x.
+- A new Compose Multiplatform debug inspector (`:inspector-cmp`) is available for both Android and iOS. On iOS it's exposed as a single-call `UIViewController` factory.
+- The Android Hyperion plugin and the original Views inspector are kept, Android-only, unchanged behaviorally — Android consumers who use Hyperion keep the exact UX they had on 2.x.
+- The Gradle plugin now supports Kotlin Multiplatform consumers: generated flag sources land in `commonMain`.
 
-## Installation (JitPack)
+## Distribution
 
-This fork is not published to Maven Central. Consume it via **JitPack**, pointed at a tag of the fork.
+The fork is distributed exclusively via **JitPack**. **No CocoaPods** — because KMP consumers (both Android and iOS targets inside a shared Kotlin module) resolve the per-target klibs through Gradle, so CocoaPods is only needed for pure-Swift consumers who don't use KMP. If that becomes a need later, we can add a GitHub-Release-hosted XCFramework + hand-maintained podspec.
+
+### Setup
 
 ```kotlin
 // settings.gradle.kts
@@ -24,25 +27,7 @@ dependencyResolutionManagement {
     maven("https://jitpack.io")
   }
 }
-```
 
-```kotlin
-// app/build.gradle.kts
-dependencies {
-  implementation("com.github.vudzkostek.laboratory:laboratory:<TAG>")
-  // Debug inspector (Compose Multiplatform):
-  debugImplementation("com.github.vudzkostek.laboratory:inspector-cmp:<TAG>")
-  // Android-only Hyperion plugin (optional, keeps the original Views inspector):
-  debugImplementation("com.github.vudzkostek.laboratory:hyperion-plugin:<TAG>")
-}
-```
-
-Replace `<TAG>` with a release tag of the fork (e.g. `3.0.0`) or a short commit SHA.
-
-Gradle plugin (for code generation of feature-flag enums):
-
-```kotlin
-// settings.gradle.kts
 pluginManagement {
   repositories {
     gradlePluginPortal()
@@ -51,15 +36,37 @@ pluginManagement {
   resolutionStrategy {
     eachPlugin {
       if (requested.id.id == "io.mehow.laboratory") {
-        useModule("com.github.vudzkostek.laboratory:gradle-plugin:<TAG>")
+        useModule("com.github.vudzkostek.laboratory:gradle-plugin:${requested.version}")
       }
     }
   }
 }
+```
 
-// module build.gradle.kts
+### Consume from a KMP shared module
+
+```kotlin
+// shared/build.gradle.kts
 plugins {
-  id("io.mehow.laboratory")
+  kotlin("multiplatform")
+  id("io.mehow.laboratory") version "<TAG>"
+}
+
+kotlin {
+  sourceSets {
+    commonMain.dependencies {
+      // SDK — gives you Feature, Laboratory, Storage, FeatureFactory on all platforms.
+      implementation("com.github.vudzkostek.laboratory:laboratory:<TAG>")
+
+      // Compose Multiplatform debug inspector. Pull it into a debug-only variant if your build
+      // supports that (e.g. a dedicated commonDebugMain source set).
+      implementation("com.github.vudzkostek.laboratory:inspector-cmp:<TAG>")
+    }
+    androidMain.dependencies {
+      // Android-only Hyperion debug menu entry (optional). Pulls in the original Views inspector.
+      debugImplementation("com.github.vudzkostek.laboratory:hyperion-plugin:<TAG>")
+    }
+  }
 }
 
 laboratory {
@@ -74,9 +81,9 @@ laboratory {
 }
 ```
 
-## Usage
+Replace `<TAG>` with a release tag of the fork (e.g. `3.0.0`) or a short commit SHA. The gradle plugin uses the same tag for its generated `api(...)` dep by default; override via a `laboratory.libraryCoordinate` project property if you ever publish Laboratory somewhere else.
 
-Define a feature flag — same as the original:
+### Define a feature flag
 
 ```kotlin
 enum class AuthType : Feature<AuthType> {
@@ -86,24 +93,25 @@ enum class AuthType : Feature<AuthType> {
 }
 ```
 
-### Android
+### Use it (common code, works on Android + iOS)
 
 ```kotlin
-val storage = Storage.dataStore(context)
 val laboratory = Laboratory.builder()
-    .localStorage(storage)
+    .localStorage(storage)                       // Storage.dataStore(context) on Android, Storage.dataStore() on iOS
     .featureFactory(FeatureFactory.generated())  // generated by the Gradle plugin
     .build()
 
-val currentAuthType = laboratory.experiment<AuthType>()
+val current = laboratory.experiment<AuthType>()
 laboratory.setOption(AuthType.Face)
+
 laboratory.observe<AuthType>()
     .onEach { option -> println("AuthType: $option") }
     .launchIn(scope)
 ```
 
-The Hyperion debug menu entry opens the original Views inspector — unchanged from the 2.x release. The new Compose Multiplatform inspector is also available for Android consumers who skip Hyperion:
+### Show the debug inspector
 
+**Android — via Compose (any Compose host):**
 ```kotlin
 setContent {
   LaboratoryInspector(
@@ -115,52 +123,37 @@ setContent {
 }
 ```
 
-### iOS (CocoaPods)
+**Android — via Hyperion:**
+The Hyperion menu entry is automatic once you add the `hyperion-plugin` dep. It opens the original Views inspector — identical UX to the 2.x release.
 
-JitPack serves the `laboratory` + `inspector-cmp` KMP klibs, but iOS consumers additionally need the CocoaPods frameworks. Build them locally from the fork and point your `Podfile` at the output:
-
-```sh
-./gradlew :laboratory:shared:podPublishXCFramework :laboratory:inspector-cmp:podPublishXCFramework
-```
-
-Then in your `Podfile`:
-
-```ruby
-pod 'Laboratory',           :path => '<path to laboratory>/laboratory/shared'
-pod 'LaboratoryInspector',  :path => '<path to laboratory>/laboratory/inspector-cmp'
-```
-
-Swift usage:
-
-```swift
-import Laboratory
-import LaboratoryInspector
-
-let storage = StorageCompanion.shared.dataStore(name: "laboratory")
-let laboratory = LaboratoryCompanion.shared.builder()
-    .localStorage(storage: storage)
-    .featureFactory(factory: GeneratedFeatureFactoryKt.generated(FeatureFactory.companion))
-    .build()
-
-let configuration = LaboratoryConfiguration(
-    laboratory: laboratory,
-    featureFactories: ["Features": GeneratedFeatureFactoryKt.generated(FeatureFactory.companion)],
-    deprecationHandler: nil
+**iOS — from your KMP shared module:**
+```kotlin
+// shared/src/iosMain/.../DebugTools.kt
+fun showLaboratory(
+    laboratory: Laboratory,
+    factory: FeatureFactory,
+): UIViewController = LaboratoryViewController(
+    configuration = LaboratoryConfiguration(
+        laboratory = laboratory,
+        featureFactories = mapOf("Features" to factory),
+    ),
 )
-present(LaboratoryViewController(configuration: configuration), animated: true)
 ```
 
-Reified lookups (`experiment<T>()`, `observe<T>()`) work the same way on iOS. For non-reified call sites (which the inspector uses internally) you **must** register a generated `FeatureFactory` via `Laboratory.Builder.featureFactory(...)` — otherwise option discovery falls back to JVM reflection, which is not available on iOS.
+Call it from Swift via your own umbrella framework:
+```swift
+let vc = SharedKt.showLaboratory(laboratory: lab, factory: factory)
+present(vc, animated: true)
+```
 
 ## Samples
 
-- `samples/basic`, `samples/default-option`, `samples/multi-module` — original Android samples, updated for the new `KClass` API, still using the Views inspector + Hyperion.
+- `samples/basic`, `samples/default-option`, `samples/multi-module` — original Android samples, updated for the `KClass` API, still using the Views inspector + Hyperion.
 - `samples/kmp` — new KMP sample demonstrating Android + iOS consumption through the shared SDK and the Compose inspector.
-- `samples/kmp/iosApp` — minimal SwiftUI scaffold showing `LaboratoryViewController(configuration:)` from Swift. See its `README.md` for `pod install` instructions.
 
 ## Migration path
 
-The underlying Compose Multiplatform work and the KMP migration plan live in [`KMP_MIGRATION_PLAN.md`](KMP_MIGRATION_PLAN.md).
+The underlying migration plan lives in [`KMP_MIGRATION_PLAN.md`](KMP_MIGRATION_PLAN.md) — six phases, each independently buildable, with session notes for the context behind each decision.
 
 ## License
 
@@ -173,10 +166,4 @@ you may not use this file except in compliance with the License.
 You may obtain a copy of the License at
 
    http://www.apache.org/licenses/LICENSE-2.0
-
-Unless required by applicable law or agreed to in writing, software
-distributed under the License is distributed on an "AS IS" BASIS,
-WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-See the License for the specific language governing permissions and
-limitations under the License.
 ```

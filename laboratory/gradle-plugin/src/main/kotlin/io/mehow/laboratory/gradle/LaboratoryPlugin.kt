@@ -89,7 +89,12 @@ public class LaboratoryPlugin : Plugin<Project> {
   }
 
   private fun Project.addLaboratoryDependency() {
-    val coordinate = "io.mehow.laboratory:laboratory:$LibraryVersion"
+    // Default coordinate is the JitPack path for the vudzkostek fork. Consumers can override via
+    // the `laboratory.libraryCoordinate` project property, e.g. in gradle.properties or on the
+    // command line, when they publish Laboratory elsewhere (Maven Central, GitHub Packages, …).
+    val coordinate =
+      findProperty("laboratory.libraryCoordinate")?.toString()
+        ?: "com.github.vudzkostek.laboratory:laboratory:$LibraryVersion"
     if (hasKmp.get()) {
       val extension = extensions.getByType(KotlinMultiplatformExtension::class.java)
       extension.sourceSets.getByName("commonMain").dependencies { api(coordinate) }

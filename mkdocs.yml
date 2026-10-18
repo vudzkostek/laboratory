@@ -3,7 +3,7 @@ site_description: A feature flags library for multi-module Kotlin Android projec
 site_author: Michał Sikora
 site_url: https://mehow.io/laboratory/
 repo_name: Laboratory
-repo_url: https://github.com/MiSikora/laboratory/
+repo_url: https://github.com/vudzkostek/laboratory/
 edit_uri: edit/trunk/library/docs
 remote_branch: gh-pages
 
