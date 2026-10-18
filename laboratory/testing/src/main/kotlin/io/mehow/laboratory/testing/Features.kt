@@ -8,7 +8,7 @@ import kotlin.reflect.KClass
 
 @OptIn(InternalLaboratoryApi::class)
 val <T> KClass<T>.options: List<T> where T : Feature<T>, T : Enum<T>
-  get() = java.options
+  get() = options()
 
 enum class FeatureA : Feature<FeatureA> {
   A,

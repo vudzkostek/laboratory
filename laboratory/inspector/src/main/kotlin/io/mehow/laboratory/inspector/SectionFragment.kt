@@ -9,6 +9,7 @@ import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import io.mehow.laboratory.Feature
+import kotlin.reflect.KClass
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
 
@@ -35,7 +36,7 @@ internal class SectionFragment : Fragment(R.layout.io_mehow_laboratory_feature_g
           override fun onSelectOption(option: Feature<*>) =
             inspectionViewModel.selectFeature(option)
 
-          override fun onSelectSource(feature: Class<out Feature<*>>, source: Feature.Source) =
+          override fun onSelectSource(feature: KClass<out Feature<*>>, source: Feature.Source) =
             inspectionViewModel.selectSource(feature, source)
         },
       )

@@ -7,7 +7,7 @@ plugins {
 
 dependencies {
   api(libs.kotlinpoet)
-  implementation(projects.laboratory.runtime)
+  implementation(projects.laboratory.shared)
 
   testImplementation(libs.junit)
   testImplementation(libs.kotest.assertions)

@@ -42,20 +42,20 @@ class FeatureFactoryModelTest {
 
         import io.mehow.laboratory.Feature
         import io.mehow.laboratory.FeatureFactory
-        import java.lang.Class
         import kotlin.Suppress
         import kotlin.collections.Set
         import kotlin.collections.setOf
+        import kotlin.reflect.KClass
 
         internal fun FeatureFactory.Companion.generated(): FeatureFactory = Factory
 
         private object Factory : FeatureFactory {
           @Suppress("UNCHECKED_CAST")
-          override fun create(): Set<Class<out Feature<*>>> = setOf(
-            Class.forName("io.mehow.FeatureA"),
-            Class.forName("io.mehow.FeatureB"),
-            Class.forName("io.mehow.c.FeatureA")
-          ) as Set<Class<out Feature<*>>>
+          override fun create(): Set<KClass<out Feature<*>>> = setOf(
+            FeatureA::class,
+            FeatureB::class,
+            io.mehow.c.FeatureA::class
+          ) as Set<KClass<out Feature<*>>>
         }
         """
   }
@@ -77,20 +77,20 @@ class FeatureFactoryModelTest {
 
         import io.mehow.laboratory.Feature
         import io.mehow.laboratory.FeatureFactory
-        import java.lang.Class
         import kotlin.Suppress
         import kotlin.collections.Set
         import kotlin.collections.setOf
+        import kotlin.reflect.KClass
 
         public fun FeatureFactory.Companion.generated(): FeatureFactory = Factory
 
         private object Factory : FeatureFactory {
           @Suppress("UNCHECKED_CAST")
-          override fun create(): Set<Class<out Feature<*>>> = setOf(
-            Class.forName("io.mehow.FeatureA"),
-            Class.forName("io.mehow.FeatureB"),
-            Class.forName("io.mehow.c.FeatureA")
-          ) as Set<Class<out Feature<*>>>
+          override fun create(): Set<KClass<out Feature<*>>> = setOf(
+            FeatureA::class,
+            FeatureB::class,
+            io.mehow.c.FeatureA::class
+          ) as Set<KClass<out Feature<*>>>
         }
         """
   }
@@ -107,14 +107,14 @@ class FeatureFactoryModelTest {
 
         import io.mehow.laboratory.Feature
         import io.mehow.laboratory.FeatureFactory
-        import java.lang.Class
         import kotlin.collections.Set
         import kotlin.collections.emptySet
+        import kotlin.reflect.KClass
 
         internal fun FeatureFactory.Companion.generated(): FeatureFactory = Factory
 
         private object Factory : FeatureFactory {
-          override fun create(): Set<Class<out Feature<*>>> = emptySet<Class<out Feature<*>>>()
+          override fun create(): Set<KClass<out Feature<*>>> = emptySet<KClass<out Feature<*>>>()
         }
         """
   }

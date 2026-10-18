@@ -20,8 +20,25 @@ kotlin {
   iosSimulatorArm64()
 
   sourceSets {
+    val commonMain by getting {
+      dependencies { api(libs.coroutines.core) }
+    }
     val commonTest by getting {
-      dependencies { implementation(kotlin("test")) }
+      dependencies {
+        implementation(kotlin("test"))
+        implementation(libs.coroutines.test)
+        implementation(libs.turbine)
+        implementation(libs.kotest.assertions)
+      }
+    }
+    val jvmMain by getting {
+      dependencies { implementation(libs.atomicfu) }
+    }
+    val jvmTest by getting {
+      dependencies { implementation(libs.junit) }
+    }
+    val androidMain by getting {
+      dependencies { implementation(libs.atomicfu) }
     }
   }
 }

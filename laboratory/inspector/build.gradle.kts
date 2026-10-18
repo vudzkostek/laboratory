@@ -13,7 +13,7 @@ android {
 }
 
 dependencies {
-  api(projects.laboratory.runtime)
+  api(projects.laboratory.shared)
   implementation(libs.hyperion.plugin)
   implementation(libs.androidx.appcompat)
   implementation(libs.androidx.fragment.ktx)

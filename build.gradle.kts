@@ -49,6 +49,6 @@ dependencies {
   dokka(project(":laboratory:gradle-plugin"))
   dokka(project(":laboratory:hyperion-plugin"))
   dokka(project(":laboratory:inspector"))
-  dokka(project(":laboratory:runtime"))
+  dokka(project(":laboratory:shared"))
   dokka(project(":laboratory:shared-preferences"))
 }

@@ -8,7 +8,7 @@ plugins {
 android { namespace = "io.mehow.laboratory.sharedpreferences" }
 
 dependencies {
-  api(projects.laboratory.runtime)
+  api(projects.laboratory.shared)
   implementation(libs.coroutines.core)
 
   testImplementation(projects.laboratory.testing)

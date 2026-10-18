@@ -45,7 +45,7 @@ class Plugin(
 
 val dependencies =
   listOf(
-    Lib(alias = "laboratory-runtime", artifactId = "laboratory", projectId = ":laboratory:runtime"),
+    Lib(alias = "laboratory-runtime", artifactId = "laboratory", projectId = ":laboratory:shared"),
     Lib(
       alias = "laboratory-sharedPrefernces",
       artifactId = "laboratory-shared-preferences",

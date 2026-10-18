@@ -15,6 +15,7 @@ import io.mehow.laboratory.Feature
 import io.mehow.laboratory.inspector.FeatureStyle.Hide
 import io.mehow.laboratory.inspector.FeatureStyle.Show
 import io.mehow.laboratory.inspector.FeatureStyle.Strikethrough
+import kotlin.reflect.KClass
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.cancelAndJoin
 import kotlinx.coroutines.flow.Flow
@@ -25,8 +26,8 @@ internal class FeatureViewHolder(
   listener: FeatureAdapter.Listener,
   private val lifecycle: Lifecycle,
   private val isRemoteSourceAvailable: Boolean,
-  private val selectedOptionFlow: (Class<out Feature<*>>) -> Flow<Feature<*>>,
-  private val selectedSourceFlow: (Class<out Feature<*>>) -> Flow<Feature.Source>,
+  private val selectedOptionFlow: (KClass<out Feature<*>>) -> Flow<Feature<*>>,
+  private val selectedSourceFlow: (KClass<out Feature<*>>) -> Flow<Feature.Source>,
 ) : ViewHolder(itemView) {
   private val nameControl =
     itemView.findViewById<MaterialTextView>(R.id.io_mehow_laboratory_feature_name)

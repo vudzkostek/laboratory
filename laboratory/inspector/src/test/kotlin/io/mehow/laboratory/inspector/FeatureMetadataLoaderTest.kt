@@ -27,7 +27,7 @@ class FeatureMetadataLoaderTest {
   fun `local feature`() {
     val features = loader.load()
 
-    val feature = features.shouldHaveSingle { it.type == LocalFeature::class.java }
+    val feature = features.shouldHaveSingle { it.type == LocalFeature::class }
 
     feature.name shouldBe "LocalFeature"
     feature.options shouldContainExactly LocalFeature::class.options
@@ -38,7 +38,7 @@ class FeatureMetadataLoaderTest {
   fun `remote feature`() {
     val features = loader.load()
 
-    val feature = features.shouldHaveSingle { it.type == RemoteFeature::class.java }
+    val feature = features.shouldHaveSingle { it.type == RemoteFeature::class }
 
     feature.name shouldBe "RemoteFeature"
     feature.options shouldContainExactly RemoteFeature::class.options
@@ -49,7 +49,7 @@ class FeatureMetadataLoaderTest {
   fun `feature with description`() {
     val features = loader.load()
 
-    val feature = features.shouldHaveSingle { it.type == FeatureWithDescription::class.java }
+    val feature = features.shouldHaveSingle { it.type == FeatureWithDescription::class }
 
     feature.name shouldBe "FeatureWithDescription"
     feature.options shouldContainExactly FeatureWithDescription::class.options
@@ -65,7 +65,7 @@ class FeatureMetadataLoaderTest {
   fun `warning deprecated feature`() {
     val features = loader.load()
 
-    val feature = features.shouldHaveSingle { it.type == DeprecatedWarningFeature::class.java }
+    val feature = features.shouldHaveSingle { it.type == DeprecatedWarningFeature::class }
 
     feature.name shouldBe "DeprecatedWarningFeature"
     feature.options shouldContainExactly DeprecatedWarningFeature::class.options
@@ -76,7 +76,7 @@ class FeatureMetadataLoaderTest {
   fun `error deprecated feature`() {
     val features = loader.load()
 
-    val feature = features.shouldHaveSingle { it.type == DeprecatedErrorFeature::class.java }
+    val feature = features.shouldHaveSingle { it.type == DeprecatedErrorFeature::class }
 
     feature.name shouldBe "DeprecatedErrorFeature"
     feature.options shouldContainExactly DeprecatedErrorFeature::class.options
@@ -144,15 +144,15 @@ class FeatureMetadataLoaderTest {
 
     features shouldContainExactly
       listOf(
-        DeprecatedErrorFeature::class.java,
-        FeatureWithDescription::class.java,
-        LocalFeature::class.java,
-        RemoteFeature::class.java,
-        DeprecatedWarningFeature::class.java,
+        DeprecatedErrorFeature::class,
+        FeatureWithDescription::class,
+        LocalFeature::class,
+        RemoteFeature::class,
+        DeprecatedWarningFeature::class,
       )
   }
 }
 
 private operator fun List<FeatureMetadata>.get(feature: KClass<out Feature<*>>) = find {
-  it.type == feature.java
+  it.type == feature
 }

@@ -11,11 +11,11 @@ import com.squareup.kotlinpoet.MemberName
 import com.squareup.kotlinpoet.STAR
 import com.squareup.kotlinpoet.TypeSpec
 import com.squareup.kotlinpoet.WildcardTypeName
-import com.squareup.kotlinpoet.asTypeName
 import com.squareup.kotlinpoet.joinToCode
 import io.mehow.laboratory.Feature
 import io.mehow.laboratory.FeatureFactory
 import io.mehow.laboratory.generator.Visibility.Internal
+import kotlin.reflect.KClass
 
 public class FeatureFactoryModel(
   public val className: ClassName,
@@ -28,9 +28,8 @@ public class FeatureFactoryModel(
 private class FeatureFactoryGenerator(factory: FeatureFactoryModel) {
   private val featureClasses =
     factory.features
-      .map { it.className.reflectionName() }
-      .sorted()
-      .map { name -> CodeBlock.of("%T.forName(%S)", Class::class.asTypeName(), name) }
+      .sortedBy { it.className.reflectionName() }
+      .map { feature -> CodeBlock.of("%T::class", feature.className) }
       .joinToCode(prefix = "\n⇥", separator = ",\n", suffix = "⇤\n")
 
   private val suppressCast =
@@ -79,7 +78,7 @@ private class FeatureFactoryGenerator(factory: FeatureFactoryModel) {
   fun fileSpec() = factoryFile
 
   private companion object {
-    val featureType = Class::class(WildcardTypeName.producerOf(Feature::class(STAR)))
+    val featureType = KClass::class(WildcardTypeName.producerOf(Feature::class(STAR)))
     val factoryReturnType = Set::class(featureType)
   }
 }
