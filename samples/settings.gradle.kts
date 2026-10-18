@@ -61,6 +61,11 @@ val dependencies =
       artifactId = "laboratory-hyperion-plugin",
       projectId = ":laboratory:hyperion-plugin",
     ),
+    Lib(
+      alias = "laboratory-inspectorCmp",
+      artifactId = "inspector-cmp",
+      projectId = ":laboratory:inspector-cmp",
+    ),
     Plugin(
       alias = "laboratory-gradlePlugin",
       artifactId = "laboratory-gradle-plugin",
@@ -90,6 +95,7 @@ includeBuild("..") {
 include(
   ":basic",
   ":default-option",
+  ":kmp",
   ":multi-module",
   ":multi-module:multi-module-a",
   ":multi-module:multi-module-b",

@@ -1,0 +1,13 @@
+platform :ios, '14.0'
+use_frameworks! :linkage => :static
+
+# Local-path podspecs produced by `./gradlew :laboratory:shared:podPublishXCFramework`,
+# `./gradlew :laboratory:inspector-cmp:podPublishXCFramework` and
+# `./gradlew :kmp:podPublishXCFramework` (from the samples/ included build).
+#
+# Replace these paths with your private spec-repo entries when you ship.
+target 'iosApp' do
+  pod 'Laboratory', :path => '../../../laboratory/shared/build/cocoapods/publish/debug'
+  pod 'LaboratoryInspector', :path => '../../../laboratory/inspector-cmp/build/cocoapods/publish/debug'
+  pod 'LaboratorySample', :path => '../build/cocoapods/publish/debug'
+end

@@ -3,7 +3,11 @@ import com.android.build.gradle.AppPlugin
 
 plugins {
   alias(libs.plugins.kotlin.jvm) apply false
+  alias(libs.plugins.kotlin.multiplatform) apply false
   alias(libs.plugins.agp.application) apply false
+  alias(libs.plugins.agp.kotlin.multiplatform.library) apply false
+  alias(libs.plugins.compose.multiplatform) apply false
+  alias(libs.plugins.compose.compiler) apply false
   alias(libs.plugins.laboratory) apply false
   alias(libs.plugins.laboratory.convention) apply false
 }
