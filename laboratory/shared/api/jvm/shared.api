@@ -107,6 +107,7 @@ public abstract interface class io/mehow/laboratory/Laboratory$BuildingStep {
 	public abstract fun build ()Lio/mehow/laboratory/Laboratory;
 	public abstract fun defaultOptionFactory (Lio/mehow/laboratory/DefaultOptionFactory;)Lio/mehow/laboratory/Laboratory$BuildingStep;
 	public abstract fun defaultSourceFactory (Lio/mehow/laboratory/DefaultSourceFactory;)Lio/mehow/laboratory/Laboratory$BuildingStep;
+	public abstract fun featureFactory (Lio/mehow/laboratory/FeatureFactory;)Lio/mehow/laboratory/Laboratory$BuildingStep;
 	public abstract fun remoteStorage (Lio/mehow/laboratory/Storage;)Lio/mehow/laboratory/Laboratory$BuildingStep;
 }
 

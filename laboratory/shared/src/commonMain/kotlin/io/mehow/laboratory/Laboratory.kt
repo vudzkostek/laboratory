@@ -18,12 +18,13 @@ import kotlinx.coroutines.flow.map
  * the main entry point for getting and setting feature flag values.
  */
 public class Laboratory internal constructor(builder: Builder) {
-  private val localStorage = SourceOptionStorage(builder.localStorage)
-  private val remoteStorage = builder.remoteStorage?.let(::OptionStorage)
+  private val featureFactory: FeatureFactory? = builder.featureFactory
+  private val localStorage = SourceOptionStorage(builder.localStorage, featureFactory)
+  private val remoteStorage = builder.remoteStorage?.let { OptionStorage(it, featureFactory) }
   private val sourceFactory = SafeDefaultSourceFactory(builder.defaultSourceFactory)
-  private val optionFactory = SafeDefaultOptionFactory(builder.defaultOptionFactory)
-  private val rawLocalStorage = RawOptionStorage(builder.localStorage)
-  private val rawRemoteStorage = builder.remoteStorage?.let(::RawOptionStorage)
+  private val optionFactory = SafeDefaultOptionFactory(builder.defaultOptionFactory, featureFactory)
+  private val rawLocalStorage = RawOptionStorage(builder.localStorage, featureFactory)
+  private val rawRemoteStorage = builder.remoteStorage?.let { RawOptionStorage(it, featureFactory) }
 
   public fun localStorage(): SourceOptionStorage = localStorage
 
@@ -99,7 +100,9 @@ public class Laboratory internal constructor(builder: Builder) {
 
   @InternalLaboratoryApi
   public fun observeSourceRaw(feature: KClass<out Feature<*>>): Flow<Feature.Source> =
-    rawLocalStorage.observeSource(feature).map { source -> source ?: feature.defaultSourceRaw() }
+    rawLocalStorage.observeSource(feature).map { source ->
+      source ?: feature.defaultSourceRaw(featureFactory)
+    }
 
   /**
    * Returns the current option of the specified [Feature]. If the feature has a remote source and a
@@ -211,7 +214,7 @@ public class Laboratory internal constructor(builder: Builder) {
 
   @OptIn(InternalLaboratoryApi::class)
   private fun getSource(feature: KClass<out Feature<*>>) =
-    sourceFactory.create(feature.firstOptionRaw())
+    sourceFactory.create(feature.firstOptionRaw(featureFactory))
 
   private fun <T> getOption(feature: KClass<out T>, selectedOption: T?)
     where T : Feature<T>, T : Enum<out T> = selectedOption ?: optionFactory.create(feature)
@@ -263,6 +266,12 @@ public class Laboratory internal constructor(builder: Builder) {
       defaultOptionFactory = factory
     }
 
+    var featureFactory: FeatureFactory? = null
+
+    override fun featureFactory(factory: FeatureFactory): BuildingStep = apply {
+      featureFactory = factory
+    }
+
     override fun build(): Laboratory = Laboratory(this)
   }
 
@@ -302,6 +311,18 @@ public class Laboratory internal constructor(builder: Builder) {
      * flag with sources will default to its defined [Feature.defaultOption].
      */
     public fun defaultOptionFactory(factory: DefaultOptionFactory): BuildingStep
+
+    /**
+     * Registers a [FeatureFactory] whose generator-emitted `options()` lookup is used to resolve
+     * feature options without runtime reflection. Required on Kotlin/Native targets (iOS) because
+     * [kotlin.reflect.KClass.java.enumConstants] is unavailable there; recommended on the JVM too
+     * so the inspector and consumer code can resolve non-reified `KClass`-based lookups without the
+     * JVM reflection fallback.
+     *
+     * If no factory is registered, non-reified lookups fall back to platform reflection on the JVM
+     * and Android, and throw [kotlin.NotImplementedError] on iOS.
+     */
+    public fun featureFactory(factory: FeatureFactory): BuildingStep
 
     /** Creates a new [Laboratory] instance with the configuration from this builder. */
     public fun build(): Laboratory

@@ -1,17 +1,15 @@
 package io.mehow.laboratory.internal
 
 import io.mehow.laboratory.Feature
+import io.mehow.laboratory.FeatureFactory
 import kotlin.reflect.KClass
 
 /**
- * Looks up the list of options for a feature flag [KClass].
+ * Looks up the list of options for a feature flag [KClass] via runtime reflection.
  *
  * Platform-specific bridge: implemented via JVM reflection on the JVM and Android, and left
- * unsupported on iOS (which should use the reified `experiment<T>()` / `observe<T>()` APIs
- * instead).
- *
- * TODO Phase 5: route this through a generator-emitted registry attached to `FeatureFactory` so
- * non-reified KClass-based lookups work on every platform (including iOS) without reflection.
+ * unsupported on iOS. On iOS, callers must consult a generator-emitted [FeatureFactory] registry
+ * instead — register one via `Laboratory.Builder.featureFactory(...)`.
  */
 @InternalLaboratoryApi public expect fun KClass<out Feature<*>>.optionsRaw(): List<Feature<*>>
 
@@ -41,3 +39,17 @@ public fun KClass<out Feature<*>>.defaultOptionRaw(): Feature<*> = firstOptionRa
 @InternalLaboratoryApi
 public fun KClass<out Feature<*>>.defaultSourceRaw(): Feature.Source =
   firstOptionRaw().defaultSource
+
+/** Overloads that prefer a generator-emitted [FeatureFactory] registry over runtime reflection. */
+@InternalLaboratoryApi
+public fun KClass<out Feature<*>>.firstOptionRaw(featureFactory: FeatureFactory?): Feature<*> =
+  (featureFactory?.options(this) ?: optionsRaw()).first()
+
+@InternalLaboratoryApi
+public fun KClass<out Feature<*>>.defaultOptionRaw(featureFactory: FeatureFactory?): Feature<*> =
+  firstOptionRaw(featureFactory).defaultOption
+
+@InternalLaboratoryApi
+public fun KClass<out Feature<*>>.defaultSourceRaw(
+  featureFactory: FeatureFactory?
+): Feature.Source = firstOptionRaw(featureFactory).defaultSource

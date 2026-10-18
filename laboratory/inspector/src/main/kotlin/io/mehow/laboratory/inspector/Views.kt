@@ -15,6 +15,7 @@ import androidx.recyclerview.widget.RecyclerView
 import androidx.viewpager2.widget.ViewPager2
 import kotlin.math.absoluteValue
 
+@Suppress("DEPRECATION") // SHOW_IMPLICIT is Deprecated in Android 36+ but still functional.
 internal fun View.focusAndShowKeyboard() {
   fun View.showKeyboardIfFocused() {
     if (isFocused) {
@@ -40,6 +41,7 @@ internal fun View.focusAndShowKeyboard() {
   }
 }
 
+@Suppress("DEPRECATION") // HIDE_NOT_ALWAYS is Deprecated in Android 36+ but still functional.
 internal fun View.hideKeyboard() {
   clearFocus()
   val service = context.getSystemService(INPUT_METHOD_SERVICE) as? InputMethodManager

@@ -45,7 +45,9 @@ class FeatureFactoryModelTest {
 
         import io.mehow.laboratory.Feature
         import io.mehow.laboratory.FeatureFactory
+        import io.mehow.laboratory.`internal`.InternalLaboratoryApi
         import kotlin.Suppress
+        import kotlin.collections.List
         import kotlin.collections.Set
         import kotlin.collections.setOf
         import kotlin.reflect.KClass
@@ -59,6 +61,14 @@ class FeatureFactoryModelTest {
             FeatureB::class,
             io.mehow.c.FeatureA::class
           ) as Set<KClass<out Feature<*>>>
+
+          @InternalLaboratoryApi
+          override fun options(feature: KClass<out Feature<*>>): List<Feature<*>>? = when (feature) {
+            FeatureA::class -> FeatureA.entries
+            FeatureB::class -> FeatureB.entries
+            io.mehow.c.FeatureA::class -> io.mehow.c.FeatureA.entries
+            else -> null
+          }
         }
         """
   }
@@ -80,7 +90,9 @@ class FeatureFactoryModelTest {
 
         import io.mehow.laboratory.Feature
         import io.mehow.laboratory.FeatureFactory
+        import io.mehow.laboratory.`internal`.InternalLaboratoryApi
         import kotlin.Suppress
+        import kotlin.collections.List
         import kotlin.collections.Set
         import kotlin.collections.setOf
         import kotlin.reflect.KClass
@@ -94,6 +106,14 @@ class FeatureFactoryModelTest {
             FeatureB::class,
             io.mehow.c.FeatureA::class
           ) as Set<KClass<out Feature<*>>>
+
+          @InternalLaboratoryApi
+          override fun options(feature: KClass<out Feature<*>>): List<Feature<*>>? = when (feature) {
+            FeatureA::class -> FeatureA.entries
+            FeatureB::class -> FeatureB.entries
+            io.mehow.c.FeatureA::class -> io.mehow.c.FeatureA.entries
+            else -> null
+          }
         }
         """
   }
@@ -110,6 +130,8 @@ class FeatureFactoryModelTest {
 
         import io.mehow.laboratory.Feature
         import io.mehow.laboratory.FeatureFactory
+        import io.mehow.laboratory.`internal`.InternalLaboratoryApi
+        import kotlin.collections.List
         import kotlin.collections.Set
         import kotlin.collections.emptySet
         import kotlin.reflect.KClass
@@ -118,6 +140,9 @@ class FeatureFactoryModelTest {
 
         private object Factory : FeatureFactory {
           override fun create(): Set<KClass<out Feature<*>>> = emptySet<KClass<out Feature<*>>>()
+
+          @InternalLaboratoryApi
+          override fun options(feature: KClass<out Feature<*>>): List<Feature<*>>? = null
         }
         """
   }

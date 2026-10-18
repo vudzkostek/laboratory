@@ -8,6 +8,7 @@ import com.squareup.kotlinpoet.FunSpec
 import com.squareup.kotlinpoet.KModifier.OVERRIDE
 import com.squareup.kotlinpoet.KModifier.PRIVATE
 import com.squareup.kotlinpoet.MemberName
+import com.squareup.kotlinpoet.ParameterSpec
 import com.squareup.kotlinpoet.STAR
 import com.squareup.kotlinpoet.TypeSpec
 import com.squareup.kotlinpoet.WildcardTypeName
@@ -15,6 +16,7 @@ import com.squareup.kotlinpoet.joinToCode
 import io.mehow.laboratory.Feature
 import io.mehow.laboratory.FeatureFactory
 import io.mehow.laboratory.generator.Visibility.Internal
+import io.mehow.laboratory.internal.InternalLaboratoryApi
 import kotlin.reflect.KClass
 
 public class FeatureFactoryModel(
@@ -26,14 +28,17 @@ public class FeatureFactoryModel(
 }
 
 private class FeatureFactoryGenerator(factory: FeatureFactoryModel) {
+  private val sortedFeatures = factory.features.sortedBy { it.className.reflectionName() }
+
   private val featureClasses =
-    factory.features
-      .sortedBy { it.className.reflectionName() }
+    sortedFeatures
       .map { feature -> CodeBlock.of("%T::class", feature.className) }
       .joinToCode(prefix = "\n⇥", separator = ",\n", suffix = "⇤\n")
 
   private val suppressCast =
     AnnotationSpec.builder(Suppress::class).addMember("%S", "UNCHECKED_CAST").build()
+
+  private val internalApi = AnnotationSpec.builder(InternalLaboratoryApi::class).build()
 
   private val setOf = MemberName("kotlin.collections", "setOf")
 
@@ -54,11 +59,36 @@ private class FeatureFactoryGenerator(factory: FeatureFactoryModel) {
       }
       .build()
 
+  private val featureParameter = ParameterSpec.builder("feature", featureType).build()
+
+  private val optionsBranches =
+    sortedFeatures
+      .map { feature ->
+        CodeBlock.of("%T::class·->·%T.entries", feature.className, feature.className)
+      }
+      .joinToCode(prefix = "when·(feature)·{\n⇥", separator = "\n", suffix = "\nelse·->·null⇤\n}")
+
+  private val optionsFunctionOverride =
+    FunSpec.builder("options")
+      .addModifiers(OVERRIDE)
+      .addAnnotation(internalApi)
+      .addParameter(featureParameter)
+      .returns(optionsReturnType)
+      .apply {
+        if (sortedFeatures.isEmpty()) {
+          addStatement("return null")
+        } else {
+          addStatement("return %L", optionsBranches)
+        }
+      }
+      .build()
+
   private val factoryType =
     TypeSpec.objectBuilder(factory.className)
       .addModifiers(PRIVATE)
       .addSuperinterface(FeatureFactory::class)
       .addFunction(discoveryFunctionOverride)
+      .addFunction(optionsFunctionOverride)
       .build()
 
   private val factoryExtension =
@@ -91,5 +121,6 @@ private class FeatureFactoryGenerator(factory: FeatureFactoryModel) {
   private companion object {
     val featureType = KClass::class(WildcardTypeName.producerOf(Feature::class(STAR)))
     val factoryReturnType = Set::class(featureType)
+    val optionsReturnType = List::class(Feature::class(STAR)).copy(nullable = true)
   }
 }
