@@ -1,14 +1,10 @@
 package io.mehow.laboratory
 
-import kotlin.reflect.KClass
-import kotlinx.coroutines.runBlocking
-
 /**
  * A blocking equivalent of [Laboratory] that provides synchronous versions of feature flag
- * operations. Each function in this class will execute the corresponding [Laboratory] suspend
- * function on the current thread, potentially performing I/O and thus **blocking** the thread. This
- * is useful in contexts where suspending functions cannot be used, but should be avoided on main/UI
- * threads.
+ * operations. On the JVM (and Android) each call runs the suspending work on the current thread via
+ * `kotlinx.coroutines.runBlocking`. On Kotlin/Native targets (iOS) the operations throw — callers
+ * on iOS should use the suspending [Laboratory] APIs directly.
  */
 public class BlockingLaboratory internal constructor(private val laboratory: Laboratory) {
   /** The blocking equivalent of [Laboratory.experiment]. */
@@ -18,15 +14,13 @@ public class BlockingLaboratory internal constructor(private val laboratory: Lab
 
   /** The blocking equivalent of [Laboratory.experiment]. */
   @BlockingIoCall
-  public fun <T> experiment(feature: KClass<out T>): T where T : Feature<T>, T : Enum<out T> =
-    runBlocking {
-      laboratory.experiment(feature)
-    }
+  public fun <T> experiment(feature: kotlin.reflect.KClass<out T>): T
+    where T : Feature<T>, T : Enum<out T> = runBlockingPlatform { laboratory.experiment(feature) }
 
   /** The blocking equivalent of [Laboratory.experimentIs]. */
   @BlockingIoCall
   public fun <T> experimentIs(option: T): Boolean where T : Feature<T>, T : Enum<out T> =
-    runBlocking {
+    runBlockingPlatform {
       laboratory.experimentIs(option)
     }
 
@@ -37,33 +31,38 @@ public class BlockingLaboratory internal constructor(private val laboratory: Lab
 
   /** The blocking equivalent of [Laboratory.isEnabled]. */
   @BlockingIoCall
-  public fun <T> isEnabled(feature: KClass<out T>): Boolean
-    where T : BinaryFeature<T>, T : Feature<T>, T : Enum<out T> = runBlocking {
+  public fun <T> isEnabled(feature: kotlin.reflect.KClass<out T>): Boolean
+    where T : BinaryFeature<T>, T : Feature<T>, T : Enum<out T> = runBlockingPlatform {
     laboratory.isEnabled(feature)
   }
 
   /** The blocking equivalent of [Laboratory.setOption]. */
   @BlockingIoCall
-  public fun setOption(option: Feature<*>): Boolean = runBlocking { laboratory.setOption(option) }
+  public fun setOption(option: Feature<*>): Boolean = runBlockingPlatform {
+    laboratory.setOption(option)
+  }
 
   /** The blocking equivalent of [Laboratory.setOptions]. */
   @BlockingIoCall
-  public fun setOptions(vararg options: Feature<*>): Boolean = runBlocking {
+  public fun setOptions(vararg options: Feature<*>): Boolean = runBlockingPlatform {
     laboratory.setOptions(*options)
   }
 
   /** The blocking equivalent of [Laboratory.setOptions]. */
   @BlockingIoCall
-  public fun setOptions(options: Collection<Feature<*>>): Boolean = runBlocking {
+  public fun setOptions(options: Collection<Feature<*>>): Boolean = runBlockingPlatform {
     laboratory.setOptions(options)
   }
 
   /** The blocking equivalent of [Laboratory.clear]. */
-  @BlockingIoCall public fun clear(): Boolean = runBlocking { laboratory.clear() }
+  @BlockingIoCall public fun clear(): Boolean = runBlockingPlatform { laboratory.clear() }
 }
 
 /**
- * Returns a [BlockingLaboratory] that provides blocking (synchronous) versions of this Laboratory's
- * API. Only available on the JVM; iOS consumers should rely on the suspending API surface instead.
+ * Returns a [BlockingLaboratory] that provides blocking (synchronous) versions of this
+ * [Laboratory]'s suspending API. On Kotlin/Native targets (iOS) the returned instance throws on
+ * every call — iOS consumers should use the suspending [Laboratory] API directly.
  */
 public fun Laboratory.blocking(): BlockingLaboratory = BlockingLaboratory(this)
+
+internal expect fun <T> runBlockingPlatform(block: suspend () -> T): T
