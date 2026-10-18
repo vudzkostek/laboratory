@@ -1,81 +1,136 @@
-# Laboratory ⚗️
+# Laboratory ⚗️ — KMP fork
 
-[![Maven Central](https://img.shields.io/maven-metadata/v?metadataUrl=https%3A%2F%2Frepo1.maven.org%2Fmaven2%2Fio%2Fmehow%2Flaboratory%2Flaboratory%2Fmaven-metadata.xml&style=flat-square&label=maven-central&color=%235C96B2)](https://central.sonatype.com/namespace/io.mehow.laboratory)
-[![Snapshots](https://img.shields.io/maven-metadata/v?metadataUrl=https%3A%2F%2Fcentral.sonatype.com%2Frepository%2Fmaven-snapshots%2Fio%2Fmehow%2Flaboratory%2Flaboratory%2Fmaven-metadata.xml&style=flat-square&label=snapshots&color=%2315252D&strategy=latestProperty)](https://central.sonatype.com/repository/maven-snapshots/io/mehow/laboratory/)
+> **Fork notice.** This is a Kotlin Multiplatform fork of **[MiSikora/laboratory](https://github.com/MiSikora/laboratory)**. The original project — authored by Michał Sikora — is Android-only and the canonical source of the design, documentation, and changelog. Please consult the [original project website](https://mehow.io/laboratory/) for conceptual docs; this README covers only what differs in the KMP fork.
 
-Feature flags for multi-module Kotlin Android projects.
+Feature flags for Kotlin projects — now on **Android, iOS, and JVM** through a single KMP SDK.
 
-Please visit [project website](https://mehow.io/laboratory/) for the full documentation and the [changelog](https://mehow.io/laboratory/changelog/).
+## What changed vs. the original
 
-## TLDR
+- One SDK artifact (`io.mehow.laboratory:laboratory`) replaces the per-module `:runtime` / `:data-store` / `:shared-preferences` split. DataStore (Okio) is the only storage backend; `SharedPreferences` support has been removed.
+- Public API uses `KClass<out Feature<*>>` instead of `Class<out Feature<*>>`. Call sites change from `AuthType::class.java` to `AuthType::class`. This is a breaking change versus the original 2.x.
+- A new Compose Multiplatform debug inspector (`:inspector-cmp`) is available on Android and iOS. On iOS it's exposed as a single-call `UIViewController` factory. On Android the original Hyperion/Views inspector is kept and still works unchanged — Android consumers can use either.
+- The Gradle plugin supports KMP consumers: generated flags land in `commonMain`.
 
-Starting from `3.0.0`, Laboratory is a Kotlin Multiplatform library. The same SDK
-powers Android and iOS consumers through a single `io.mehow.laboratory:laboratory`
-artifact (with per-target variants published automatically for Android, JVM, and the
-three iOS architectures). The debug inspector screen is a Compose Multiplatform module
-you can plug into either platform.
+## Installation (JitPack)
 
-### Android
+This fork is not published to Maven Central. Consume it via **JitPack**, pointed at a tag of the fork.
 
-Add Laboratory as a dependency.
-
-```groovy
-repositories {
-  mavenCentral()
-}
-
-dependencies {
-  implementation "io.mehow.laboratory:laboratory:3.0.0"
+```kotlin
+// settings.gradle.kts
+dependencyResolutionManagement {
+  repositories {
+    mavenCentral()
+    google()
+    maven("https://jitpack.io")
+  }
 }
 ```
 
-Define your feature flags.
+```kotlin
+// app/build.gradle.kts
+dependencies {
+  implementation("com.github.vudzkostek.laboratory:laboratory:<TAG>")
+  // Debug inspector (Compose Multiplatform):
+  debugImplementation("com.github.vudzkostek.laboratory:inspector-cmp:<TAG>")
+  // Android-only Hyperion plugin (optional, keeps the original Views inspector):
+  debugImplementation("com.github.vudzkostek.laboratory:hyperion-plugin:<TAG>")
+}
+```
+
+Replace `<TAG>` with a release tag of the fork (e.g. `3.0.0`) or a short commit SHA.
+
+Gradle plugin (for code generation of feature-flag enums):
+
+```kotlin
+// settings.gradle.kts
+pluginManagement {
+  repositories {
+    gradlePluginPortal()
+    maven("https://jitpack.io")
+  }
+  resolutionStrategy {
+    eachPlugin {
+      if (requested.id.id == "io.mehow.laboratory") {
+        useModule("com.github.vudzkostek.laboratory:gradle-plugin:<TAG>")
+      }
+    }
+  }
+}
+
+// module build.gradle.kts
+plugins {
+  id("io.mehow.laboratory")
+}
+
+laboratory {
+  packageName = "com.example.flags"
+  feature("AuthType") {
+    withDefaultOption("Fingerprint")
+    withOption("None")
+    withOption("Retina")
+    withOption("Face")
+  }
+  featureFactory()
+}
+```
+
+## Usage
+
+Define a feature flag — same as the original:
 
 ```kotlin
 enum class AuthType : Feature<AuthType> {
-  None,
-  Fingerprint,
-  Retina,
-  Face;
+  None, Fingerprint, Retina, Face;
 
-  public override val defaultOption get() = Fingerprint
+  override val defaultOption get() = Fingerprint
 }
 ```
 
-Start using them in the application.
+### Android
 
 ```kotlin
-suspend fun main() {
-  // A high-level API for interaction with feature flags
-  val laboratory = Laboratory.inMemory()
+val storage = Storage.dataStore(context)
+val laboratory = Laboratory.builder()
+    .localStorage(storage)
+    .featureFactory(FeatureFactory.generated())  // generated by the Gradle plugin
+    .build()
 
-  // Set AuthType option to Fingerprint
-  val success = laboratory.setOption(AuthType.Fingerprint)
+val currentAuthType = laboratory.experiment<AuthType>()
+laboratory.setOption(AuthType.Face)
+laboratory.observe<AuthType>()
+    .onEach { option -> println("AuthType: $option") }
+    .launchIn(scope)
+```
 
-  // Check what is the current option of AuthType
-  val currentAuthType = laboratory.experiment<AuthType>()
+The Hyperion debug menu entry opens the original Views inspector — unchanged from the 2.x release. The new Compose Multiplatform inspector is also available for Android consumers who skip Hyperion:
 
-  // Check if the current option of AuthType is equal to Face
-  val isFaceAuth = laboratory.experimentIs(AuthType.Face)
-
-  // Observe changes to the AuthType feature flag
-  laboratory.observe<AuthType>()
-      .onEach { option -> println("AuthType: $option") }
-      .launchIn(GlobalScope)
+```kotlin
+setContent {
+  LaboratoryInspector(
+    configuration = LaboratoryConfiguration(
+      laboratory = laboratory,
+      featureFactories = mapOf("Features" to FeatureFactory.generated()),
+    ),
+  )
 }
 ```
 
 ### iOS (CocoaPods)
 
-Add the generated pods to your `Podfile` — the SDK ships them from the KMP module's
-`podPublishXCFramework` task.
+JitPack serves the `laboratory` + `inspector-cmp` KMP klibs, but iOS consumers additionally need the CocoaPods frameworks. Build them locally from the fork and point your `Podfile` at the output:
 
-```ruby
-pod 'Laboratory'            # the SDK
-pod 'LaboratoryInspector'   # the Compose Multiplatform debug inspector (debug-only pod)
+```sh
+./gradlew :laboratory:shared:podPublishXCFramework :laboratory:inspector-cmp:podPublishXCFramework
 ```
 
-Then from Swift:
+Then in your `Podfile`:
+
+```ruby
+pod 'Laboratory',           :path => '<path to laboratory>/laboratory/shared'
+pod 'LaboratoryInspector',  :path => '<path to laboratory>/laboratory/inspector-cmp'
+```
+
+Swift usage:
 
 ```swift
 import Laboratory
@@ -84,34 +139,44 @@ import LaboratoryInspector
 let storage = StorageCompanion.shared.dataStore(name: "laboratory")
 let laboratory = LaboratoryCompanion.shared.builder()
     .localStorage(storage: storage)
-    .featureFactory(factory: GeneratedFeatureFactory_shared.generated())
+    .featureFactory(factory: GeneratedFeatureFactoryKt.generated(FeatureFactory.companion))
     .build()
 
-let configuration = LaboratoryConfiguration.Companion.shared.create(
+let configuration = LaboratoryConfiguration(
     laboratory: laboratory,
-    featureFactory: GeneratedFeatureFactory_shared.generated(),
-    sectionName: "Features",
-    deprecationHandler: DeprecationHandler.Companion.shared.Default
+    featureFactories: ["Features": GeneratedFeatureFactoryKt.generated(FeatureFactory.companion)],
+    deprecationHandler: nil
 )
-present(LaboratoryViewControllerKt.LaboratoryViewController(configuration: configuration))
+present(LaboratoryViewController(configuration: configuration), animated: true)
 ```
 
-Reify-based lookups (`experiment<T>()`, `observe<T>()`) only exist on Kotlin's reified
-APIs. On iOS, wire a generated `FeatureFactory` into the builder so the inspector and
-non-reified call sites can resolve enum entries without JVM reflection.
+Reified lookups (`experiment<T>()`, `observe<T>()`) work the same way on iOS. For non-reified call sites (which the inspector uses internally) you **must** register a generated `FeatureFactory` via `Laboratory.Builder.featureFactory(...)` — otherwise option discovery falls back to JVM reflection, which is not available on iOS.
+
+## Samples
+
+- `samples/basic`, `samples/default-option`, `samples/multi-module` — original Android samples, updated for the new `KClass` API, still using the Views inspector + Hyperion.
+- `samples/kmp` — new KMP sample demonstrating Android + iOS consumption through the shared SDK and the Compose inspector.
+- `samples/kmp/iosApp` — minimal SwiftUI scaffold showing `LaboratoryViewController(configuration:)` from Swift. See its `README.md` for `pod install` instructions.
+
+## Migration path
+
+The underlying Compose Multiplatform work and the KMP migration plan live in [`KMP_MIGRATION_PLAN.md`](KMP_MIGRATION_PLAN.md).
 
 ## License
 
-    Copyright 2020 Michał Sikora
+```
+Copyright 2020 Michał Sikora
+Copyright 2026 Artur Kosta (KMP fork contributions)
 
-    Licensed under the Apache License, Version 2.0 (the "License");
-    you may not use this file except in compliance with the License.
-    You may obtain a copy of the License at
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
 
-       http://www.apache.org/licenses/LICENSE-2.0
+   http://www.apache.org/licenses/LICENSE-2.0
 
-    Unless required by applicable law or agreed to in writing, software
-    distributed under the License is distributed on an "AS IS" BASIS,
-    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-    See the License for the specific language governing permissions and
-    limitations under the License.
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+```
