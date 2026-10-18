@@ -58,11 +58,4 @@ public class BlockingLaboratory internal constructor(private val laboratory: Lab
   @BlockingIoCall public fun clear(): Boolean = runBlockingPlatform { laboratory.clear() }
 }
 
-/**
- * Returns a [BlockingLaboratory] that provides blocking (synchronous) versions of this
- * [Laboratory]'s suspending API. On Kotlin/Native targets (iOS) the returned instance throws on
- * every call — iOS consumers should use the suspending [Laboratory] API directly.
- */
-public fun Laboratory.blocking(): BlockingLaboratory = BlockingLaboratory(this)
-
 internal expect fun <T> runBlockingPlatform(block: suspend () -> T): T

@@ -31,6 +31,14 @@ public class Laboratory internal constructor(builder: Builder) {
   public fun remoteStorage(): OptionStorage? = remoteStorage
 
   /**
+   * Returns a [BlockingLaboratory] that provides blocking (synchronous) versions of this
+   * [Laboratory]'s suspending API. On the JVM and Android, each call runs the suspending work via
+   * `kotlinx.coroutines.runBlocking`. On Kotlin/Native targets (iOS) the operations throw — callers
+   * on iOS should use the suspending [Laboratory] API directly.
+   */
+  public fun blocking(): BlockingLaboratory = BlockingLaboratory(this)
+
+  /**
    * Observes changes to the specified [Feature] type.
    *
    * This returns a cold [Flow] that will emit the current option of the feature and continue to
