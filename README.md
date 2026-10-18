@@ -9,7 +9,15 @@ Please visit [project website](https://mehow.io/laboratory/) for the full docume
 
 ## TLDR
 
-Add Laboratory dependency to your project.
+Starting from `3.0.0`, Laboratory is a Kotlin Multiplatform library. The same SDK
+powers Android and iOS consumers through a single `io.mehow.laboratory:laboratory`
+artifact (with per-target variants published automatically for Android, JVM, and the
+three iOS architectures). The debug inspector screen is a Compose Multiplatform module
+you can plug into either platform.
+
+### Android
+
+Add Laboratory as a dependency.
 
 ```groovy
 repositories {
@@ -17,7 +25,7 @@ repositories {
 }
 
 dependencies {
-  implementation "io.mehow.laboratory:laboratory:2.0.3"
+  implementation "io.mehow.laboratory:laboratory:3.0.0"
 }
 ```
 
@@ -56,6 +64,41 @@ suspend fun main() {
       .launchIn(GlobalScope)
 }
 ```
+
+### iOS (CocoaPods)
+
+Add the generated pods to your `Podfile` — the SDK ships them from the KMP module's
+`podPublishXCFramework` task.
+
+```ruby
+pod 'Laboratory'            # the SDK
+pod 'LaboratoryInspector'   # the Compose Multiplatform debug inspector (debug-only pod)
+```
+
+Then from Swift:
+
+```swift
+import Laboratory
+import LaboratoryInspector
+
+let storage = StorageCompanion.shared.dataStore(name: "laboratory")
+let laboratory = LaboratoryCompanion.shared.builder()
+    .localStorage(storage: storage)
+    .featureFactory(factory: GeneratedFeatureFactory_shared.generated())
+    .build()
+
+let configuration = LaboratoryConfiguration.Companion.shared.create(
+    laboratory: laboratory,
+    featureFactory: GeneratedFeatureFactory_shared.generated(),
+    sectionName: "Features",
+    deprecationHandler: DeprecationHandler.Companion.shared.Default
+)
+present(LaboratoryViewControllerKt.LaboratoryViewController(configuration: configuration))
+```
+
+Reify-based lookups (`experiment<T>()`, `observe<T>()`) only exist on Kotlin's reified
+APIs. On iOS, wire a generated `FeatureFactory` into the builder so the inspector and
+non-reified call sites can resolve enum entries without JVM reflection.
 
 ## License
 
