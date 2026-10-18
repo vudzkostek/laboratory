@@ -19,8 +19,6 @@ includeBuild("build-logic")
 
 include(
   ":laboratory:shared",
-  ":laboratory:shared-preferences",
-  ":laboratory:data-store",
   ":laboratory:generator",
   ":laboratory:gradle-plugin",
   ":laboratory:inspector",
