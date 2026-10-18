@@ -9,6 +9,7 @@ import io.mehow.laboratory.Feature
 import io.mehow.laboratory.Laboratory
 import io.mehow.laboratory.inspector.OptionViewGroup.OptionGroupListener
 import io.mehow.laboratory.internal.InternalLaboratoryApi
+import kotlin.reflect.KClass
 
 internal class FeatureAdapter(
   private val laboratory: Laboratory,
@@ -51,6 +52,6 @@ internal class FeatureAdapter(
   }
 
   interface Listener : OptionGroupListener {
-    fun onSelectSource(feature: Class<out Feature<*>>, source: Feature.Source)
+    fun onSelectSource(feature: KClass<out Feature<*>>, source: Feature.Source)
   }
 }

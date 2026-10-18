@@ -155,18 +155,20 @@ class GeneratedFeatureFactory(
   private val code: String,
 ) {
   infix fun shouldCreateFeature(featureFqcn: String) {
+    val simpleName = featureFqcn.substringAfterLast('.')
     withClue(
       "Expected '$projectName' to generate feature factory '$fqcn' with feature '$featureFqcn'"
     ) {
-      code shouldContain "Class.forName(\"$featureFqcn\")"
+      code shouldContain "$simpleName::class"
     }
   }
 
   infix fun shouldNotCreateFeature(featureFqcn: String) {
+    val simpleName = featureFqcn.substringAfterLast('.')
     withClue(
       "Expected '$projectName' to not generate feature factory '$fqcn' with feature '$featureFqcn'"
     ) {
-      code shouldNotContain "Class.forName(\"$featureFqcn\")"
+      code shouldNotContain "$simpleName::class"
     }
   }
 }

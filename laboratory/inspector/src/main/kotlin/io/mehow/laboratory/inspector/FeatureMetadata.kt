@@ -5,10 +5,11 @@ import io.mehow.laboratory.FeatureFactory
 import io.mehow.laboratory.internal.InternalLaboratoryApi
 import io.mehow.laboratory.internal.optionsRaw
 import java.util.concurrent.atomic.AtomicReference
+import kotlin.reflect.KClass
 
 internal class FeatureMetadata(
   val id: Long,
-  val type: Class<out Feature<*>>,
+  val type: KClass<out Feature<*>>,
   val name: String,
   val options: List<Feature<*>>,
   val defaultSource: Feature.Source,
@@ -46,15 +47,16 @@ internal class FeatureMetadata(
       featureFactory.create().mapIndexedNotNull(::createMetadata).sortedWith(Comparator)
 
     @OptIn(InternalLaboratoryApi::class)
-    private fun createMetadata(index: Int, type: Class<out Feature<*>>): FeatureMetadata? {
-      val level = type.annotations.filterIsInstance<Deprecated>().firstOrNull()?.level
+    private fun createMetadata(index: Int, type: KClass<out Feature<*>>): FeatureMetadata? {
+      val level = type.java.annotations.filterIsInstance<Deprecated>().firstOrNull()?.level
       val style = level?.let(deprecationHandler::getPhenotype) ?: FeatureStyle.Show
       return if (style != FeatureStyle.Hide) {
-        val options = type.optionsRaw
+        val options = type.optionsRaw()
+        val qualifiedName = type.qualifiedName ?: type.simpleName!!
         return FeatureMetadata(
           id = index.toLong(),
           type = type,
-          name = type.name.substringAfterLast('.').replace('$', '.'),
+          name = qualifiedName.substringAfterLast('.').replace('$', '.'),
           options = options.toList(),
           defaultSource = options[0].defaultSource,
           description = options[0].description.tokenize(),

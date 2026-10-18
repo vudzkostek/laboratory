@@ -6,6 +6,7 @@ import io.mehow.laboratory.Feature
 import io.mehow.laboratory.Laboratory
 import io.mehow.laboratory.inspector.LaboratoryActivity.Configuration
 import kotlin.coroutines.CoroutineContext
+import kotlin.reflect.KClass
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -43,7 +44,7 @@ internal class InspectionViewModel(
     scope.launch { laboratory.setOption(feature) }
   }
 
-  fun selectSource(feature: Class<out Feature<*>>, source: Feature.Source) {
+  fun selectSource(feature: KClass<out Feature<*>>, source: Feature.Source) {
     scope.launch {
       val storage = laboratory.localStorage()
       when (source) {

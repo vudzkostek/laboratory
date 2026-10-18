@@ -18,7 +18,6 @@ dependencyResolutionManagement {
 includeBuild("build-logic")
 
 include(
-  ":laboratory:runtime",
   ":laboratory:shared",
   ":laboratory:shared-preferences",
   ":laboratory:data-store",

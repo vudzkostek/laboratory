@@ -11,7 +11,7 @@ wire { kotlin {} }
 android { namespace = "io.mehow.laboratory.datastore" }
 
 dependencies {
-  api(projects.laboratory.runtime)
+  api(projects.laboratory.shared)
   api(libs.androidx.datastore)
   api(libs.wire)
 

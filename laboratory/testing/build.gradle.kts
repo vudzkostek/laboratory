@@ -8,7 +8,7 @@ plugins {
 kotlin { explicitApi = ExplicitApiMode.Disabled }
 
 dependencies {
-  api(projects.laboratory.runtime)
+  api(projects.laboratory.shared)
 
   api(libs.junit)
   implementation(libs.coroutines.test)

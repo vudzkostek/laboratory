@@ -10,6 +10,7 @@ import io.mehow.laboratory.inspector.test.LocalFeature
 import io.mehow.laboratory.inspector.test.NoOpDeprecationHandler
 import io.mehow.laboratory.inspector.test.RemoteFeature
 import kotlin.coroutines.EmptyCoroutineContext
+import kotlin.reflect.KClass
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.runTest
@@ -29,9 +30,8 @@ class InspectionViewModelTest {
           "test" to
             FeatureMetadata.Loader(
               object : FeatureFactory {
-                override fun create() =
-                  setOf(LocalFeature::class.java, RemoteFeature::class.java)
-                    as Set<Class<out Feature<*>>>
+                override fun create(): Set<KClass<out Feature<*>>> =
+                  setOf(LocalFeature::class, RemoteFeature::class)
               },
               NoOpDeprecationHandler,
             )

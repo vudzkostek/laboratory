@@ -2,18 +2,18 @@ package io.mehow.laboratory.inspector.test
 
 import io.mehow.laboratory.Feature
 import io.mehow.laboratory.FeatureFactory
+import kotlin.reflect.KClass
 
 object TestFeatureFactory : FeatureFactory {
   @Suppress("DEPRECATION", "DEPRECATION_ERROR")
-  override fun create() =
+  override fun create(): Set<KClass<out Feature<*>>> =
     setOf(
-      LocalFeature::class.java,
-      RemoteFeature::class.java,
-      DeprecatedWarningFeature::class.java,
-      DeprecatedErrorFeature::class.java,
-      FeatureWithDescription::class.java,
+      LocalFeature::class,
+      RemoteFeature::class,
+      DeprecatedWarningFeature::class,
+      DeprecatedErrorFeature::class,
+      FeatureWithDescription::class,
     )
-      as Set<Class<out Feature<*>>>
 }
 
 enum class LocalFeature : Feature<LocalFeature> {

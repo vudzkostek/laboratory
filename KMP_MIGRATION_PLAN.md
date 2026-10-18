@@ -273,13 +273,13 @@ Scope: ~1 day. **No logic ported yet.**
 ### Phase 2 — Port runtime core to `commonMain` (+ propagate `KClass` to Android inspector)
 Scope: ~1 day.
 
-- [ ] Move `Feature.kt`, `BinaryFeature.kt`, `DefaultSourceFactory.kt`, `InternalLaboratoryApi.kt`, `Storage.kt` (+ `InMemoryStorage`), `BlockingIoCall` annotation to `:shared/commonMain`.
-- [ ] Migrate `OptionStorage`, `Laboratory`, `OptionFactory`, `FeatureFactory`, `DefaultOptionFactory` from `Class<out Feature<*>>` to `KClass<out Feature<*>>`.
-- [ ] Replace `internal/FeatureType.kt` reflection-based option lookup with a `KClass<out Feature<*>> → List<Feature<*>>` map populated by the generator (temporarily hand-roll a small helper for tests until Phase 4 wires the generator).
-- [ ] Introduce `Feature.storageKey: String` with a default implementation returning `this::class.simpleName!!` (temporary until generator emits a stable key).
-- [ ] Move `BlockingLaboratory` to `jvmMain` as a `fun Laboratory.blocking(): BlockingLaboratory` extension.
-- [ ] Update `:laboratory:inspector` + `:laboratory:hyperion-plugin` to compile against the new `KClass`-based API (`FeatureFactory.create()` returning `Set<KClass<...>>`, `OptionStorage` methods taking `KClass<...>`, etc.). No UI changes.
-- [ ] Port existing JVM tests to `commonTest` where possible; keep the JVM-specific ones in `jvmTest`.
+- [x] Move `Feature.kt`, `BinaryFeature.kt`, `DefaultSourceFactory.kt`, `InternalLaboratoryApi.kt`, `Storage.kt` (+ `InMemoryStorage`), `BlockingIoCall` annotation to `:shared/commonMain`.
+- [x] Migrate `OptionStorage`, `Laboratory`, `OptionFactory`, `FeatureFactory`, `DefaultOptionFactory` from `Class<out Feature<*>>` to `KClass<out Feature<*>>`.
+- [x] Replace `internal/FeatureType.kt` reflection-based option lookup with a `KClass<out Feature<*>> → List<Feature<*>>` map populated by the generator (temporarily hand-roll a small helper for tests until Phase 4 wires the generator).
+- [x] Introduce `Feature.storageKey: String` with a default implementation returning `this::class.simpleName!!` (temporary until generator emits a stable key).
+- [x] Move `BlockingLaboratory` to `jvmMain` as a `fun Laboratory.blocking(): BlockingLaboratory` extension.
+- [x] Update `:laboratory:inspector` + `:laboratory:hyperion-plugin` to compile against the new `KClass`-based API (`FeatureFactory.create()` returning `Set<KClass<...>>`, `OptionStorage` methods taking `KClass<...>`, etc.). No UI changes.
+- [x] Port existing JVM tests to `commonTest` where possible; keep the JVM-specific ones in `jvmTest`.
 - **Acceptance:** `:laboratory:shared` compiles and tests pass on `jvm`, `android`, `iosSimulatorArm64`. In-memory `Laboratory.inMemory()` works from a `commonTest` test. Android `:inspector` + `:hyperion-plugin` build green against the new API.
 
 ### Phase 3 — DataStore (Okio) storage in `:shared` + delete `:shared-preferences`
@@ -350,7 +350,7 @@ All resolved by the user. Decisions carried into §7 Conventions.
 
 - [x] Phase 0 — Analysis + plan (this document)
 - [x] Phase 1 — Workspace plumbing + `:shared` KMP scaffold
-- [ ] Phase 2 — Port runtime core to `commonMain` (+ KClass propagation into Android inspector)
+- [x] Phase 2 — Port runtime core to `commonMain` (+ KClass propagation into Android inspector)
 - [ ] Phase 3 — DataStore (Okio) storage + delete `:shared-preferences` + delete `:data-store`
 - [ ] Phase 4 — Gradle plugin + generator rework for KMP
 - [ ] Phase 5 — Compose Multiplatform inspector (`:inspector-cmp`)
@@ -383,3 +383,29 @@ Session notes go **below this line** — the agent for each phase appends a brie
   - Default KMP hierarchy auto-creates `iosMain` and shares the three iOS targets' source sets. No explicit `sourceSets { val iosMain by creating }` needed. Phase 3's `expect fun dataStorePath` can rely on it.
   - `apiDump` had to be run once to seed `laboratory/shared/api/jvm/shared.api` (empty). Any new public API added in Phase 2 will need another `apiDump` or the `apiCheck` will fail.
   - `publishToMavenLocal` currently publishes under artifact-id `shared`, not `laboratory`. If Phase 2 ports `:runtime` sources into `:shared` and consumers still read `io.mehow.laboratory:laboratory:…`, publishing coordinates will need to be set explicitly (via `mavenPublishing { coordinates(...) }` or by renaming the Gradle project).
+
+---
+### Phase 2 — 2026-10-18
+- Moved runtime core from `:laboratory:runtime` into `:laboratory:shared/commonMain`: `Feature.kt`, `BinaryFeature`, `Storage.kt` (+ `InMemoryStorage`), `DefaultSourceFactory.kt`, `OptionFactory.kt`, `DefaultOptionFactory.kt`, `OptionStorage.kt`, `Laboratory.kt`, `FeatureFactory.kt`, `BlockingIoCall` annotation, `internal/InternalLaboratoryApi.kt`.
+- Migrated every public and internal signature from `Class<out Feature<*>>` to `KClass<out Feature<*>>`. Call sites now use `AuthType::class` instead of `AuthType::class.java`. `DefaultOptionFactory`'s error messages use `::class.simpleName` instead of `javaClass.simpleName`.
+- Introduced `Feature.storageKey: String` default returning `this::class.qualifiedName ?: this::class.simpleName!!`. Byte-for-byte identical to the current Android DataStore key format, so pre-existing on-disk state keeps resolving. Companion extension `KClass<out Feature<*>>.storageKey` returns the same value.
+- Replaced `internal/FeatureType.kt` reflection with an `expect fun KClass<out Feature<*>>.optionsRaw(): List<Feature<*>>` bridge. JVM/Android actuals use `.java.enumConstants` reflection (temporary; Phase 4 replaces with generator-populated registry). iOS actual throws `NotImplementedError` with a Phase-4 note — iOS consumers only hit reified APIs (`experiment<Foo>()`, `observe<Foo>()`), which use `enumValues<T>()` directly and never go through this path.
+- Moved `BlockingLaboratory` to `:shared/jvmMain` and exposed it as `fun Laboratory.blocking(): BlockingLaboratory` extension. Not available on iOS, as decided in §7.
+- `kotlinx-atomicfu 0.29.0` added to the catalog and applied to `:shared` for the thread-safe options cache in `FeatureType.jvm.kt` / `FeatureType.android.kt`.
+- `:laboratory:runtime` deleted (directory removed, `settings.gradle.kts` entry removed, root `build.gradle.kts` dokka block updated to point at `:laboratory:shared`).
+- Every consumer repointed from `:runtime` to `:shared`: `:data-store`, `:shared-preferences`, `:inspector`, `:hyperion-plugin`, `:testing`, `:generator`, `:gradle-plugin` fixtureClasspath, and `samples/settings.gradle.kts`.
+- `:inspector` + `:hyperion-plugin` compile against the new `KClass`-based API without UI changes: `InspectionViewModel.selectSource` takes `KClass<out Feature<*>>`, `FeatureMetadata.type: KClass<out Feature<*>>`, and name derivation uses `type.qualifiedName?.substringAfterLast('.')?.replace('$', '.') ?: type.simpleName!!`. `type.annotations.filterIsInstance<Deprecated>()` kept via `type.java.annotations` (JVM-only call site; inspector is Android-only, so acceptable).
+- Generator codegen updated so `FeatureFactoryModel` emits `KClass` references (`AuthType::class`) and `Set<KClass<out Feature<*>>>` return type, matching the new interface. Previously emitted `Class.forName("…")`. Phase 4 still owns the `storageKey const val` + options-registry emission; this is the minimum change needed to keep the full build consistent.
+- Existing JVM tests (`InMemoryStorageTest`, `LaboratoryTest`, `OptionStorageTest`, `DefaultOptionFactoryTest`, `DefaultSourceFactoryTest`, `FeatureFactoryTest`, `OptionFactoryTest`, `LaboratoryDefaultOptionTest`, `LaboratoryDefaultSourceTest`) ported to `:shared/commonTest` with `kotlin.test` + `kotest-assertions-core` + `turbine` + `kotlinx-coroutines-test`. JVM-only `BlockingLaboratory` tests kept in `:shared/jvmTest`. Local `TestFeatures.kt` fixtures added to `commonTest` so it doesn't depend on `:testing`.
+- `laboratory/shared/api/jvm/shared.api` regenerated via `apiDump`; new public API surface committed.
+- Verified:
+  - `./gradlew :laboratory:shared:build` → BUILD SUCCESSFUL (iOS + JVM + Android compile & tests green).
+  - `./gradlew :laboratory:shared:allTests` → all tests pass on `jvm`, `android`, `iosSimulatorArm64`. `iosX64Test` skipped on arm64 host (expected).
+  - `./gradlew :laboratory:shared:apiDump` → UP-TO-DATE after regeneration.
+  - `./gradlew :laboratory:shared:publishToMavenLocal` → BUILD SUCCESSFUL. Artifacts still published under `io.mehow.laboratory:shared*` at `2.0.4-SNAPSHOT` — artifact-id/version rename deferred to Phase 6 as planned.
+  - `./gradlew build` → BUILD SUCCESSFUL across all 317 tasks, including `:laboratory:gradle-plugin:validatePlugins` + `:test`, `:laboratory:data-store:build`, `:laboratory:shared-preferences:build`, `:laboratory:inspector:build`, `:laboratory:hyperion-plugin:build`, `:laboratory:testing:build`, `:laboratory:generator:build`.
+- **Tripwires for Phase 3:**
+  - `:data-store` + `:shared-preferences` still carry Android-only Storage impls that depend on `androidx.datastore:datastore-core` (non-KMP) + Wire-generated `StorageData` via `java.io.InputStream/OutputStream`. Phase 3 swaps to `androidx.datastore:datastore-core-okio` + `OkioSerializer<StorageData>` + Wire's `BufferedSource/Sink` codec. The current proto schema can stay as-is.
+  - `:data-store` module currently depends on `:shared` (api). After Phase 3 moves the DataStore impl into `:shared/commonMain` (+ platform actuals), delete `:data-store` from settings and strip the `wire` plugin from its own build file; `:shared` will apply `wire { kotlin {} }` instead.
+  - The temporary `expect fun KClass<out Feature<*>>.optionsRaw(): List<Feature<*>>` throws on iOS. Phase 4 replaces it with a generator-populated map so even non-reified iOS call sites work. Nothing in Phase 3 should hit it, but if a DataStore test triggers it on iOS, use a reified call site.
+  - The pre-existing full-graph Spotless config-cache issue noted in Phase 1 still applies — `./gradlew build` passes with `--no-configuration-cache`; narrower task graphs store the config cache fine.
