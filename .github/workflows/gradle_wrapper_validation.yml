@@ -4,7 +4,7 @@ on:
 
 jobs:
   gradle_wrapper_validation:
-    if: ${{ github.repository == 'MiSikora/laboratory' }}
+    if: ${{ github.repository == 'vudzkostek/laboratory' }}
     name: Gradle Wrapper Validation
     runs-on: ubuntu-latest
     steps:

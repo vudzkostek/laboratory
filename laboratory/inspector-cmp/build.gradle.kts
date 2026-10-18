@@ -6,9 +6,6 @@ plugins {
   alias(libs.plugins.agp.kotlin.multiplatform.library)
   alias(libs.plugins.compose.multiplatform)
   alias(libs.plugins.compose.compiler)
-  // CocoaPods ships with the Kotlin Multiplatform plugin; apply it without a version so Gradle
-  // does not try to resolve a separate release that would clash with KMP's bundled copy.
-  kotlin("native.cocoapods")
   alias(libs.plugins.maven.publish)
   alias(libs.plugins.dokka)
   alias(libs.plugins.laboratory.convention)
@@ -36,17 +33,6 @@ kotlin {
   // simulator targets, which match the devices modern consumers actually ship/test on.
   iosArm64()
   iosSimulatorArm64()
-
-  cocoapods {
-    summary = "Compose Multiplatform debug inspector for the Laboratory SDK."
-    homepage = "https://github.com/MiSikora/laboratory"
-    version = project.version.toString()
-    ios.deploymentTarget = "14.0"
-    framework {
-      baseName = "LaboratoryInspector"
-      isStatic = true
-    }
-  }
 
   sourceSets {
     val commonMain by getting {

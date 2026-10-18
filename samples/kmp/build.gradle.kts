@@ -53,7 +53,7 @@ kotlin {
 
   cocoapods {
     summary = "Laboratory KMP sample"
-    homepage = "https://github.com/MiSikora/laboratory"
+    homepage = "https://github.com/vudzkostek/laboratory"
     version = "0.0.1"
     ios.deploymentTarget = "14.0"
     framework {
