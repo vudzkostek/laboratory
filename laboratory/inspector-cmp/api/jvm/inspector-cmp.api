@@ -1,0 +1,60 @@
+public final class io/mehow/laboratory/inspector/cmp/ComposableSingletons$LaboratoryInspectorKt {
+	public static final field INSTANCE Lio/mehow/laboratory/inspector/cmp/ComposableSingletons$LaboratoryInspectorKt;
+	public fun <init> ()V
+	public final fun getLambda$1991212674$inspector_cmp ()Lkotlin/jvm/functions/Function2;
+}
+
+public final class io/mehow/laboratory/inspector/cmp/DeprecationHandler {
+	public static final field $stable I
+	public static final field Companion Lio/mehow/laboratory/inspector/cmp/DeprecationHandler$Companion;
+}
+
+public final class io/mehow/laboratory/inspector/cmp/DeprecationHandler$Companion {
+	public final fun create (Lio/mehow/laboratory/inspector/cmp/FeatureStyle$Selector;Lio/mehow/laboratory/inspector/cmp/FeatureAlignment$Selector;)Lio/mehow/laboratory/inspector/cmp/DeprecationHandler;
+	public final fun getDefault ()Lio/mehow/laboratory/inspector/cmp/DeprecationHandler;
+}
+
+public final class io/mehow/laboratory/inspector/cmp/FeatureAlignment : java/lang/Enum {
+	public static final field Bottom Lio/mehow/laboratory/inspector/cmp/FeatureAlignment;
+	public static final field Regular Lio/mehow/laboratory/inspector/cmp/FeatureAlignment;
+	public static fun getEntries ()Lkotlin/enums/EnumEntries;
+	public static fun valueOf (Ljava/lang/String;)Lio/mehow/laboratory/inspector/cmp/FeatureAlignment;
+	public static fun values ()[Lio/mehow/laboratory/inspector/cmp/FeatureAlignment;
+}
+
+public abstract interface class io/mehow/laboratory/inspector/cmp/FeatureAlignment$Selector {
+	public abstract fun select (Lkotlin/DeprecationLevel;)Lio/mehow/laboratory/inspector/cmp/FeatureAlignment;
+}
+
+public final class io/mehow/laboratory/inspector/cmp/FeatureStyle : java/lang/Enum {
+	public static final field Hide Lio/mehow/laboratory/inspector/cmp/FeatureStyle;
+	public static final field Show Lio/mehow/laboratory/inspector/cmp/FeatureStyle;
+	public static final field Strikethrough Lio/mehow/laboratory/inspector/cmp/FeatureStyle;
+	public static fun getEntries ()Lkotlin/enums/EnumEntries;
+	public static fun valueOf (Ljava/lang/String;)Lio/mehow/laboratory/inspector/cmp/FeatureStyle;
+	public static fun values ()[Lio/mehow/laboratory/inspector/cmp/FeatureStyle;
+}
+
+public abstract interface class io/mehow/laboratory/inspector/cmp/FeatureStyle$Selector {
+	public abstract fun select (Lkotlin/DeprecationLevel;)Lio/mehow/laboratory/inspector/cmp/FeatureStyle;
+}
+
+public final class io/mehow/laboratory/inspector/cmp/LaboratoryConfiguration {
+	public static final field $stable I
+	public static final field Companion Lio/mehow/laboratory/inspector/cmp/LaboratoryConfiguration$Companion;
+	public fun <init> (Lio/mehow/laboratory/Laboratory;Ljava/util/Map;Lio/mehow/laboratory/inspector/cmp/DeprecationHandler;)V
+	public synthetic fun <init> (Lio/mehow/laboratory/Laboratory;Ljava/util/Map;Lio/mehow/laboratory/inspector/cmp/DeprecationHandler;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun getDeprecationHandler ()Lio/mehow/laboratory/inspector/cmp/DeprecationHandler;
+	public final fun getFeatureFactories ()Ljava/util/Map;
+	public final fun getLaboratory ()Lio/mehow/laboratory/Laboratory;
+}
+
+public final class io/mehow/laboratory/inspector/cmp/LaboratoryConfiguration$Companion {
+	public final fun create (Lio/mehow/laboratory/Laboratory;Lio/mehow/laboratory/FeatureFactory;Ljava/lang/String;Lio/mehow/laboratory/inspector/cmp/DeprecationHandler;)Lio/mehow/laboratory/inspector/cmp/LaboratoryConfiguration;
+	public static synthetic fun create$default (Lio/mehow/laboratory/inspector/cmp/LaboratoryConfiguration$Companion;Lio/mehow/laboratory/Laboratory;Lio/mehow/laboratory/FeatureFactory;Ljava/lang/String;Lio/mehow/laboratory/inspector/cmp/DeprecationHandler;ILjava/lang/Object;)Lio/mehow/laboratory/inspector/cmp/LaboratoryConfiguration;
+}
+
+public final class io/mehow/laboratory/inspector/cmp/LaboratoryInspectorKt {
+	public static final fun LaboratoryInspector (Lio/mehow/laboratory/inspector/cmp/LaboratoryConfiguration;Landroidx/compose/runtime/Composer;I)V
+}
+

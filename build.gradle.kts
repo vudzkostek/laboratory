@@ -48,5 +48,6 @@ dependencies {
   dokka(project(":laboratory:gradle-plugin"))
   dokka(project(":laboratory:hyperion-plugin"))
   dokka(project(":laboratory:inspector"))
+  dokka(project(":laboratory:inspector-cmp"))
   dokka(project(":laboratory:shared"))
 }

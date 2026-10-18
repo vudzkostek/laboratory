@@ -22,6 +22,7 @@ include(
   ":laboratory:generator",
   ":laboratory:gradle-plugin",
   ":laboratory:inspector",
+  ":laboratory:inspector-cmp",
   ":laboratory:hyperion-plugin",
   ":laboratory:testing",
 )

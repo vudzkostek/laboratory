@@ -3,7 +3,6 @@ package io.mehow.laboratory
 import io.mehow.laboratory.internal.InternalLaboratoryApi
 import io.mehow.laboratory.internal.defaultOption
 import io.mehow.laboratory.internal.defaultOptionRaw
-import io.mehow.laboratory.internal.firstOption
 import io.mehow.laboratory.internal.firstOptionRaw
 import kotlin.reflect.KClass
 
@@ -38,23 +37,30 @@ public interface DefaultOptionFactory {
   public companion object
 }
 
-internal class SafeDefaultOptionFactory(private val delegate: DefaultOptionFactory?) {
+internal class SafeDefaultOptionFactory(
+  private val delegate: DefaultOptionFactory?,
+  private val featureFactory: FeatureFactory?,
+) {
   @OptIn(InternalLaboratoryApi::class)
+  @Suppress("UNCHECKED_CAST")
   fun <T> create(feature: KClass<out T>): T where T : Feature<T>, T : Enum<out T> {
-    val defaultOption = delegate?.create(feature.firstOption()) ?: return feature.defaultOption()
+    val rawFeature = feature as KClass<out Feature<*>>
+    val defaultOption =
+      delegate?.create(rawFeature.firstOptionRaw(featureFactory))
+        ?: return rawFeature.defaultOptionRaw(featureFactory) as T
     check(defaultOption::class == feature) {
       val optionName = "${defaultOption::class.simpleName}.$defaultOption"
       val featureName = feature.qualifiedName ?: feature.simpleName
       "Tried to use $optionName as a default option for $featureName"
     }
-    @Suppress("UNCHECKED_CAST")
     return defaultOption as T
   }
 
   @OptIn(InternalLaboratoryApi::class)
   fun createRaw(feature: KClass<out Feature<*>>): Feature<*> {
     val defaultOption =
-      delegate?.create(feature.firstOptionRaw()) ?: return feature.defaultOptionRaw()
+      delegate?.create(feature.firstOptionRaw(featureFactory))
+        ?: return feature.defaultOptionRaw(featureFactory)
     check(defaultOption::class == feature) {
       val optionName = "${defaultOption::class.simpleName}.$defaultOption"
       val featureName = feature.qualifiedName ?: feature.simpleName
