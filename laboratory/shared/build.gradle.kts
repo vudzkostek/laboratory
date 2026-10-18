@@ -47,22 +47,13 @@ kotlin {
         implementation(libs.okio.fakefilesystem)
       }
     }
-    // Intermediate source set shared by JVM + Android targets. Hosts code that depends on
-    // JVM-only APIs (`kotlinx.coroutines.runBlocking`, `java.util.concurrent`, …) but should still
-    // be callable from both JVM consumers and Android consumers. iOS targets must not depend on
-    // this set.
-    val jvmAndAndroidMain by creating {
-      dependsOn(getByName("commonMain"))
-    }
     val jvmMain by getting {
-      dependsOn(jvmAndAndroidMain)
       dependencies { implementation(libs.atomicfu) }
     }
     val jvmTest by getting {
       dependencies { implementation(libs.junit) }
     }
     val androidMain by getting {
-      dependsOn(jvmAndAndroidMain)
       dependencies { implementation(libs.atomicfu) }
     }
   }
