@@ -202,7 +202,7 @@ class ConventionPlugin : Plugin<Project> {
   private fun Project.configureMavenPublishing() {
     plugins.withId(libs.mavenPublishId) {
       configure<MavenPublishBaseExtension> {
-        publishToMavenCentral()
+        publishToMavenCentral(automaticRelease = true)
         signAllPublications()
       }
     }

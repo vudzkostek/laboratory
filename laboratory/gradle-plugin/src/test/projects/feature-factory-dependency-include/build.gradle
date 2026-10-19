@@ -2,7 +2,7 @@ import io.mehow.laboratory.gradle.DependencyContribution
 
 plugins {
   id "org.jetbrains.kotlin.jvm"
-  id "io.mehow.laboratory"
+  id "io.github.vudzkostek.laboratory"
 }
 
 laboratory {

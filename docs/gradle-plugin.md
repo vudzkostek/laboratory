@@ -18,7 +18,7 @@ Feature flags are added to the generation process with a `feature()` function, w
     Check [the sample](https://github.com/MiSikora/laboratory/tree/trunk/samples/basic) with demo configuration.
 
 ```groovy
-apply plugin: "io.mehow.laboratory"
+apply plugin: "io.github.vudzkostek.laboratory"
 
 laboratory {
   packageName = "io.mehow.laboratory.sample"
@@ -93,7 +93,7 @@ The generation of feature flags factory is useful if you use the [QA module](qa-
     Check [the samples](https://github.com/MiSikora/laboratory/tree/trunk/samples/) with demo configurations.
 
 ```groovy
-apply plugin: "io.mehow.laboratory"
+apply plugin: "io.github.vudzkostek.laboratory"
 
 laboratory {
   packageName = "io.mehow.laboratory.sample"
@@ -148,7 +148,7 @@ The generation of an option factory is useful when you want to control local fea
 ![type:video](https://www.youtube.com/embed/yNm2DUcZ0L4)
 
 ```groovy
-apply plugin: "io.mehow.laboratory"
+apply plugin: "io.github.vudzkostek.laboratory"
 
 laboratory {
   packageName = "io.mehow.laboratory.sample"
@@ -235,7 +235,7 @@ A Laboratory setup for a Gradle project like above could look like this. Configu
 // module-a
 plugins {
   id "org.jetbrains.kotlin.jvm"
-  id "io.mehow.laboratory"
+  id "io.github.vudzkostek.laboratory"
 }
 
 laboratory {
@@ -259,7 +259,7 @@ laboratory {
 // module-b
 plugins {
   id "org.jetbrains.kotlin.jvm"
-  id "io.mehow.laboratory"
+  id "io.github.vudzkostek.laboratory"
 }
 
 laboratory {
@@ -285,7 +285,7 @@ dependencies {
 // module-app
 plugins {
   id "com.android.application"
-  id "io.mehow.laboratory"
+  id "io.github.vudzkostek.laboratory"
 }
 
 laboratory {

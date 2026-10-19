@@ -65,7 +65,7 @@ kotlin {
   sourceSets {
     val commonMain by getting {
       dependencies {
-        // The laboratory plugin wires `io.mehow.laboratory:laboratory` to commonMain for us; we
+        // The laboratory plugin wires `io.github.vudzkostek:laboratory` to commonMain for us; we
         // only have to pull in the inspector + Compose MP ourselves.
         implementation(libs.laboratory.inspectorCmp)
         implementation(compose.runtime)

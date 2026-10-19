@@ -12,7 +12,7 @@ val pluginName = "laboratory"
 gradlePlugin {
   plugins {
     create(pluginName) {
-      id = "io.mehow.laboratory"
+      id = "io.github.vudzkostek.laboratory"
       implementationClass = "io.mehow.laboratory.gradle.LaboratoryPlugin"
     }
   }

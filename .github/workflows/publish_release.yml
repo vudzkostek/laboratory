@@ -1,0 +1,56 @@
+name: Publish Release
+
+on:
+  push:
+    tags:
+      - "v*.*.*"
+  workflow_dispatch:
+
+jobs:
+  publish:
+    if: ${{ github.repository == 'vudzkostek/laboratory' }}
+    name: Publish to Maven Central
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v6.0.2
+
+      - name: Set Up JDK
+        uses: actions/setup-java@v5.2.0
+        with:
+          distribution: zulu
+          java-version: 21
+
+      - name: Cache Gradle Directories
+        uses: actions/cache@v5.0.5
+        with:
+          path: |
+            ~/.gradle/caches/
+            ~/.gradle/wrapper/
+          key: cache-gradle-${{ hashFiles('**/*.gradle.kts', '**/gradle-wrapper.properties') }}
+          restore-keys: cache-gradle-
+
+      - name: Verify Tag Matches VERSION_NAME
+        if: ${{ startsWith(github.ref, 'refs/tags/v') }}
+        run: |
+          TAG_VERSION="${GITHUB_REF_NAME#v}"
+          GRADLE_VERSION="$(grep '^VERSION_NAME=' gradle.properties | cut -d'=' -f2)"
+          if [ "$TAG_VERSION" != "$GRADLE_VERSION" ]; then
+            echo "Tag version ($TAG_VERSION) does not match gradle.properties VERSION_NAME ($GRADLE_VERSION)"
+            exit 1
+          fi
+          case "$GRADLE_VERSION" in
+            *-SNAPSHOT) echo "Refusing to release a SNAPSHOT version from a tag"; exit 1 ;;
+          esac
+
+      - name: Publish and Release to Maven Central
+        env:
+          ORG_GRADLE_PROJECT_mavenCentralUsername: ${{ secrets.CENTRAL_PORTAL_USERNAME }}
+          ORG_GRADLE_PROJECT_mavenCentralPassword: ${{ secrets.CENTRAL_PORTAL_PASSWORD }}
+          ORG_GRADLE_PROJECT_signingInMemoryKey: ${{ secrets.SIGNING_KEY }}
+          ORG_GRADLE_PROJECT_signingInMemoryKeyId: ${{ secrets.SIGNING_KEY_ID }}
+          ORG_GRADLE_PROJECT_signingInMemoryKeyPassword: ${{ secrets.SIGNING_KEY_PASSWORD }}
+        run: ./gradlew publishAndReleaseToMavenCentral --no-configuration-cache --stacktrace
+
+      - name: Stop Gradle
+        run: ./gradlew --stop

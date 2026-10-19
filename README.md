@@ -14,7 +14,7 @@ Feature flags for Kotlin Multiplatform projects — one SDK that works on **Andr
 
 ## Distribution
 
-The fork is distributed exclusively via **JitPack**. **No CocoaPods** — because KMP consumers (both Android and iOS targets inside a shared Kotlin module) resolve the per-target klibs through Gradle, so CocoaPods is only needed for pure-Swift consumers who don't use KMP. If that becomes a need later, we can add a GitHub-Release-hosted XCFramework + hand-maintained podspec.
+The fork is distributed via **Maven Central** under the `io.github.vudzkostek` namespace. **No CocoaPods** — because KMP consumers (both Android and iOS targets inside a shared Kotlin module) resolve the per-target klibs through Gradle, so CocoaPods is only needed for pure-Swift consumers who don't use KMP. If that becomes a need later, we can add a GitHub-Release-hosted XCFramework + hand-maintained podspec.
 
 ### Setup
 
@@ -24,21 +24,13 @@ dependencyResolutionManagement {
   repositories {
     mavenCentral()
     google()
-    maven("https://jitpack.io")
   }
 }
 
 pluginManagement {
   repositories {
+    mavenCentral()
     gradlePluginPortal()
-    maven("https://jitpack.io")
-  }
-  resolutionStrategy {
-    eachPlugin {
-      if (requested.id.id == "io.mehow.laboratory") {
-        useModule("com.github.vudzkostek.laboratory:gradle-plugin:${requested.version}")
-      }
-    }
   }
 }
 ```
@@ -49,22 +41,22 @@ pluginManagement {
 // shared/build.gradle.kts
 plugins {
   kotlin("multiplatform")
-  id("io.mehow.laboratory") version "<TAG>"
+  id("io.github.vudzkostek.laboratory") version "<VERSION>"
 }
 
 kotlin {
   sourceSets {
     commonMain.dependencies {
       // SDK — gives you Feature, Laboratory, Storage, FeatureFactory on all platforms.
-      implementation("com.github.vudzkostek.laboratory:laboratory:<TAG>")
+      implementation("io.github.vudzkostek:laboratory:<VERSION>")
 
       // Compose Multiplatform debug inspector. Pull it into a debug-only variant if your build
       // supports that (e.g. a dedicated commonDebugMain source set).
-      implementation("com.github.vudzkostek.laboratory:inspector-cmp:<TAG>")
+      implementation("io.github.vudzkostek:inspector-cmp:<VERSION>")
     }
     androidMain.dependencies {
       // Android-only Hyperion debug menu entry (optional). Pulls in the original Views inspector.
-      debugImplementation("com.github.vudzkostek.laboratory:hyperion-plugin:<TAG>")
+      debugImplementation("io.github.vudzkostek:laboratory-hyperion-plugin:<VERSION>")
     }
   }
 }
@@ -81,7 +73,7 @@ laboratory {
 }
 ```
 
-Replace `<TAG>` with a release tag of the fork (e.g. `3.0.0`) or a short commit SHA. The gradle plugin uses the same tag for its generated `api(...)` dep by default; override via a `laboratory.libraryCoordinate` project property if you ever publish Laboratory somewhere else.
+Replace `<VERSION>` with a published release (e.g. `1.0.0`). The gradle plugin uses the same version for its generated `api(...)` dep by default; override via a `laboratory.libraryCoordinate` project property if you ever publish Laboratory somewhere else.
 
 ### Define a feature flag
 

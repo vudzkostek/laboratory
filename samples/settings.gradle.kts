@@ -13,12 +13,12 @@ sealed class Dependency {
   abstract val artifactId: String
   abstract val projectId: String
 
-  val packageName = "io.mehow.laboratory"
+  val groupId = "io.github.vudzkostek"
 
   abstract fun appendTo(builder: VersionCatalogBuilder)
 
   fun substituteIn(substitutions: DependencySubstitutions) {
-    with(substitutions) { substitute(module("$packageName:$artifactId")).using(project(projectId)) }
+    with(substitutions) { substitute(module("$groupId:$artifactId")).using(project(projectId)) }
   }
 }
 
@@ -28,7 +28,7 @@ class Lib(
   override val projectId: String,
 ) : Dependency() {
   override fun appendTo(builder: VersionCatalogBuilder) {
-    builder.library(alias, "$packageName:$artifactId:+")
+    builder.library(alias, "$groupId:$artifactId:+")
   }
 }
 
@@ -39,7 +39,7 @@ class Plugin(
   val pluginId: String,
 ) : Dependency() {
   override fun appendTo(builder: VersionCatalogBuilder) {
-    builder.plugin(pluginId, packageName).version("+")
+    builder.plugin(pluginId, "io.github.vudzkostek.laboratory").version("+")
   }
 }
 
