@@ -1,5 +1,7 @@
 # Laboratory ⚗️ — KMP fork
 
+[![Maven Central](https://img.shields.io/maven-central/v/io.github.vudzkostek/laboratory?label=Maven%20Central)](https://central.sonatype.com/artifact/io.github.vudzkostek/laboratory)
+
 > **Fork notice.** This is a Kotlin Multiplatform fork of **[MiSikora/laboratory](https://github.com/MiSikora/laboratory)**. The original project — authored by Michał Sikora — is Android-only and the canonical source of the design, documentation, and changelog. Please consult the [original project website](https://mehow.io/laboratory/) for conceptual docs; this README covers only what differs in the KMP fork.
 
 Feature flags for Kotlin Multiplatform projects — one SDK that works on **Android, iOS, and JVM** from `commonMain`.
