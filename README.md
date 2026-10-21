@@ -73,7 +73,7 @@ laboratory {
 }
 ```
 
-Replace `<VERSION>` with a published release (e.g. `1.0.0`). The gradle plugin uses the same version for its generated `api(...)` dep by default; override via a `laboratory.libraryCoordinate` project property if you ever publish Laboratory somewhere else.
+Replace `<VERSION>` with a published release (e.g. `1.0.1`). The gradle plugin uses the same version for its generated `api(...)` dep by default; override via a `laboratory.libraryCoordinate` project property if you ever publish Laboratory somewhere else.
 
 ### Define a feature flag
 

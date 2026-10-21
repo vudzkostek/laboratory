@@ -6,6 +6,7 @@
 .gradle/
 build/
 /reports/
+.kotlin/
 
 # Gradle Android
 **/local.properties
